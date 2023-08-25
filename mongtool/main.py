@@ -29,7 +29,7 @@ class OptionsParser(object):
         output_fpaths = []
         if output_dir:
             output_dir = os.path.expanduser(output_dir)
-            output_fpaths = [os.path.join(output_dir, prefix + os.path.basename(os.path.splitext(input_fpath)[0])) for query in input_files for input_fpath in query]
+            output_fpaths = [os.path.join(output_dir, prefix + os.path.basename(os.path.splitext(input_fpath)[0])) for input_fpath in input_files]
         elif output_file:
             if len(input_files) > 1:
                 print(f'ERROR: You have input {len(input_files)} input_files and provided an outfile instead of an out directory. Use --outdir instead.')
