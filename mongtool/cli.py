@@ -41,6 +41,9 @@ def __db_collection(group, required):
 def __prefix(group):
     group.add_argument('--prefix', type=str, default='mongtool_results_', help='prefix for all output files')
 
+def __combined_output(group):
+    group.add_argument('--combined_output', dest='combined_output', action='store_true', help='combine all of the outputs into one output')
+
 def __help(group):
     group.add_argument('-h', '--help', action='help', help='show help message')
 
@@ -70,7 +73,7 @@ def get_main_parser():
         with arg_group(parser, 'optional arguments') as group:
             __uri(group)
             __help(group)
-    
+
     with subparser(sub_parsers, 'validate', 'Compare results from new pipeline to old results') as parser:
         with mutex_group(parser, required=True) as group:
             __input_file(group, required=False)
@@ -82,6 +85,7 @@ def get_main_parser():
             __db_name(group, required=True)
             __db_collection(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
+            __combined_output(group)
             __uri(group)
             __prefix(group)
             __help(group)

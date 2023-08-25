@@ -1,6 +1,8 @@
+import os
 import sys
 import json
 from mongtool.database import Database
+from mongtool.utils import write_out
 
 class Validate(object):
     def get_sample_id(self, results):
@@ -68,9 +70,10 @@ class Validate(object):
         mlst_seqtype_comp = int(old_data["mlst_seqtype"] == new_data["mlst_seqtype"])
         mlst_alleles = self.compare_mlst_alleles(old_data["mlst_alleles"], new_data["mlst_alleles"])
         cgmlst_alleles = self.compare_cgmlst_alleles(old_data["cgmlst_alleles"], new_data["cgmlst_alleles"])
-        return f"pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)\n{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
+        return f"{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
 
-    def run(self, input_files, output_fpaths, db_collection):
+    def run(self, input_files, output_fpaths, db_collection, combined_output):
+        csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)"
         for input_idx, input_file in enumerate(input_files):
             with open(input_file, 'r') as fin:
                 sample_json = json.load(fin)
@@ -82,5 +85,10 @@ class Validate(object):
                 species_name = self.get_species_name(sample_json)
                 fin_data_dict = self.get_fin_data(sample_json)
                 compared_data_output = self.compare_data(mdb_data_dict, fin_data_dict)
-            with open(f"{output_fpaths[input_idx]}.csv", 'w+') as fout:
-                fout.write(compared_data_output)
+                csv_output += "\n" + compared_data_output
+            if not combined_output:
+                write_out(f"{output_fpaths[input_idx]}.csv", csv_output)
+                csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)\n"
+
+        if combined_output:
+            write_out(f"{output_fpaths[0]}.csv", csv_output)
