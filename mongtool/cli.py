@@ -59,6 +59,7 @@ def get_main_parser():
             __db_name(group, required=True)
             __db_collection(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
+            __combined_output(group)
             __uri(group)
             __prefix(group)
             __help(group)
@@ -71,6 +72,7 @@ def get_main_parser():
             __db_name(group, required=True)
             __db_collection(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
+            __combined_output(group)
             __uri(group)
             __help(group)
 

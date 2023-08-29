@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import pprint
 
 from mongtool.database import Database
 from mongtool.validate import Validate
@@ -42,12 +43,15 @@ class OptionsParser(object):
 
     def find(self, options):
         Database.initialize(options.db_name)
-        output_fpaths = self._get_output_fpaths(options.query, options.output_dir, options.output_file, options.prefix)
+        output_fpaths = self._get_output_fpaths(options.query, options.output_dir, options.output_file, options.prefix, options.combined_output)
         for query_idx, query in enumerate(options.query):
-            find = json.dumps(Database.find(options.db_collection, query))
-            print(find)
-            with open(output_fpaths[query_idx], 'w+') as fout:
-                json.dump(find, fout)
+            find = list(Database.find(options.db_collection, {"id": query}))
+            if not find:
+                find = list(Database.find(options.db_collection, {"sample_id": query}))
+            pp = pprint.PrettyPrinter(indent=4)
+            pp.pprint(find)
+            #with open(output_fpaths[query_idx], 'w+') as fout:
+                #json.dump(find, fout)
 
     def insert(self, options):
         Database.initialize(options.db_name)
