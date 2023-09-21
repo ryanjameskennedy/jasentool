@@ -5,6 +5,8 @@ import pprint
 
 from mongtool.database import Database
 from mongtool.validate import Validate
+from mongtool.utils import Utils
+from mongtool.missing import Missing
 
 class OptionsParser(object):
     def __init__(self, version):
@@ -68,6 +70,27 @@ class OptionsParser(object):
         validate = Validate()
         validate.run(input_files, output_fpaths, options.db_collection, options.combined_output)
 
+    def missing(self, options):
+        utils = Utils()
+        missing = Missing()
+        if options.sample_sheet:
+            csv_dict = missing.parse_sample_sheet(options.input_file[0], options.restore_dir)
+            utils.write_out_csv(csv_dict, options.assay, options.platform, options.output_file)
+        if options.analysis_dir:
+            log_fpath = os.path.splitext(options.missing_log)[0] + ".log"
+            empty_fpath = os.path.splitext(options.output_file)[0] + "_empty.csv"
+            meta_dict = missing.parse_mongodb_csv(options.input_file[0])
+            analysis_dir_fnames = missing.parse_dir(options.analysis_dir)
+            csv_dict, missing_samples_txt = missing.find_missing(meta_dict, analysis_dir_fnames, options.restore_dir)
+            empty_files_dict, csv_dict = missing.remove_empty_files(csv_dict)
+            utils.write_out_csv(csv_dict, options.assay, options.platform, options.output_file)
+            utils.write_out_csv(empty_files_dict, options.assay, options.platform, empty_fpath)
+            utils.write_out_txt(missing_samples_txt, log_fpath)
+        if options.restore_file:
+            bash_fpath = os.path.splitext(options.restore_file)[0] + ".sh"
+            bash_script = missing.create_bash_script(csv_dict, options.restore_dir)
+            utils.write_out_txt(bash_script, bash_fpath)
+
     def parse_options(self, options):
         if options.subparser_name == 'find':
             self.find(options)
@@ -77,3 +100,6 @@ class OptionsParser(object):
 
         elif options.subparser_name == 'validate':
             self.validate(options)
+
+        elif options.subparser_name == 'missing':
+            self.missing(options)
