@@ -2,7 +2,7 @@ import os
 import sys
 import json
 from mongtool.database import Database
-from mongtool.utils import write_out
+from mongtool.utils import Utils
 
 class Validate(object):
     def get_sample_id(self, results):
@@ -73,6 +73,7 @@ class Validate(object):
         return f"{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
 
     def run(self, input_files, output_fpaths, db_collection, combined_output):
+        utils = Utils()
         csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)"
         for input_idx, input_file in enumerate(input_files):
             with open(input_file, 'r') as fin:
@@ -87,8 +88,8 @@ class Validate(object):
                 compared_data_output = self.compare_data(mdb_data_dict, fin_data_dict)
                 csv_output += "\n" + compared_data_output
             if not combined_output:
-                write_out(f"{output_fpaths[input_idx]}.csv", csv_output)
+                utils.write_out_txt(f"{output_fpaths[input_idx]}.csv", csv_output)
                 csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)\n"
 
         if combined_output:
-            write_out(f"{output_fpaths[0]}.csv", csv_output)
+            utils.write_out_txt(f"{output_fpaths[0]}.csv", csv_output)
