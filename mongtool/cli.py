@@ -20,14 +20,32 @@ def __query(group, required):
 def __input_dir(group, required, help):
     group.add_argument('--input_dir', required=required, help=help)
 
-def __input_file(group, required):
-    group.add_argument('-i', '--input_file', nargs='+', help='input filepath(s)')
+def __input_file(group, required, help):
+    group.add_argument('-i', '--input_file', nargs='+', help=help)
 
 def __output_file(group, required, help):
     group.add_argument('-o', '--output_file', required=required, type=str, help=help)
 
 def __output_dir(group, required):
     group.add_argument('--output_dir', required=required, type=str, help='directory to output files')
+
+def __analysis_dir(group, required):
+    group.add_argument('--analysis_dir', required=required, type=str, help='analysis results dir containing jasen results')
+
+def __restore_dir(group, required):
+    group.add_argument('--restore_dir', required=required, type=str, default='/fs2/seqdata/restored', help='directory user wishes spring files to be restored to')
+
+def __restore_file(group, required):
+    group.add_argument('--restore_file', required=required, type=str, help='filepath bash shell script (.sh) to be output')
+
+def __missing_log(group, required):
+    group.add_argument('--missing_log', required=required, type=str, default='missing_samples.log', help='file containing missing files')
+
+def __assay(group, required):
+    group.add_argument('--assay', required=required, type=str, default='jasen-saureus-dev', help='assay for jasen to run')
+
+def __platform(group, required):
+    group.add_argument('--platform', required=required, type=str, default='illumina', help='sequencing platform for jasen to run')
 
 def __uri(group):
     group.add_argument('--address', '--uri', default='mongodb://localhost:27017/', help='Mongodb host address. Use: `sudo lsof -iTCP -sTCP:LISTEN | grep mongo` to get address')
@@ -43,6 +61,9 @@ def __prefix(group):
 
 def __combined_output(group):
     group.add_argument('--combined_output', dest='combined_output', action='store_true', help='combine all of the outputs into one output')
+
+def __sample_sheet(group, required):
+    group.add_argument('--sample_sheet', required=required, dest='sample_sheet', action='store_true', help='sample sheet input')
 
 def __help(group):
     group.add_argument('-h', '--help', action='help', help='show help message')
@@ -66,7 +87,7 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'insert', 'Insert sample(s) into db') as parser:
         with mutex_group(parser, required=True) as group:
-            __input_file(group, required=False)
+            __input_file(group, required=False, help='path to json file to be inserted into db')
             __input_dir(group, required=False, help='path to directory containing sample files')
         with arg_group(parser, 'required named arguments') as group:
             __db_name(group, required=True)
@@ -78,7 +99,7 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'validate', 'Compare results from new pipeline to old results') as parser:
         with mutex_group(parser, required=True) as group:
-            __input_file(group, required=False)
+            __input_file(group, required=False, help='input filepath(s)')
             __input_dir(group, required=False, help='path to directory containing sample files')
         with mutex_group(parser, required=True) as group:
             __output_dir(group, required=False)
@@ -90,6 +111,20 @@ def get_main_parser():
             __combined_output(group)
             __uri(group)
             __prefix(group)
+            __help(group)
+
+    with subparser(sub_parsers, 'missing', 'Find missing sample data from old runs') as parser:
+        with arg_group(parser, 'required named arguments') as group:
+            __input_file(group, required=False, help='path to cgviz meta csv file')
+            __output_file(group, required=False, help='path to mongo db output file')
+        with arg_group(parser, 'optional arguments') as group:
+            __analysis_dir(group, required=False,)
+            __restore_dir(group, required=False,)
+            __restore_file(group, required=False,)
+            __missing_log(group, required=False,)
+            __assay(group, required=False,)
+            __platform(group, required=False,)
+            __sample_sheet(group, required=False,)
             __help(group)
 
     return main_parser
