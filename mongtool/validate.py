@@ -65,16 +65,16 @@ class Validate(object):
             total_count += 1
         return 100*(match_count/total_count)
 
-    def compare_data(self, old_data, new_data):
+    def compare_data(self, sample_id, old_data, new_data):
         pvl_comp = int(old_data["pvl"] == new_data["pvl"])
         mlst_seqtype_comp = int(old_data["mlst_seqtype"] == new_data["mlst_seqtype"])
         mlst_alleles = self.compare_mlst_alleles(old_data["mlst_alleles"], new_data["mlst_alleles"])
         cgmlst_alleles = self.compare_cgmlst_alleles(old_data["cgmlst_alleles"], new_data["cgmlst_alleles"])
-        return f"{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
+        return f"{sample_id},{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
 
     def run(self, input_files, output_fpaths, db_collection, combined_output):
         utils = Utils()
-        csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)"
+        csv_output = "sample_id,pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)"
         for input_idx, input_file in enumerate(input_files):
             with open(input_file, 'r') as fin:
                 sample_json = json.load(fin)
@@ -85,11 +85,11 @@ class Validate(object):
                 mdb_data_dict = self.get_mdb_cgv_data(db_collection, sample_id)
                 species_name = self.get_species_name(sample_json)
                 fin_data_dict = self.get_fin_data(sample_json)
-                compared_data_output = self.compare_data(mdb_data_dict, fin_data_dict)
+                compared_data_output = self.compare_data(sample_id, mdb_data_dict, fin_data_dict)
                 csv_output += "\n" + compared_data_output
             if not combined_output:
-                utils.write_out_txt(f"{output_fpaths[input_idx]}.csv", csv_output)
+                utils.write_out_txt(csv_output, f"{output_fpaths[input_idx]}.csv")
                 csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)\n"
 
         if combined_output:
-            utils.write_out_txt(f"{output_fpaths[0]}.csv", csv_output)
+            utils.write_out_txt(csv_output, f"{output_fpaths[0]}.csv", )
