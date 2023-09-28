@@ -18,7 +18,7 @@ class Missing(object):
     @staticmethod
     def find_files(search_term, parent_dir):
         search_files = os.listdir(parent_dir)
-        return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_file.startswith(search_term)])
+        return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file])
 
     @staticmethod
     def edit_read_paths(reads, restore_dir):
@@ -64,8 +64,16 @@ class Missing(object):
                                 paired_reads_string = '\n-'.join(paired_reads)
                                 print(sample_id)
                                 print(f"There are 4 sets of reads related to sample {sample_id} from the {parent_dir}: \n-{paired_reads_string}\n")
-                        #else:
+                        elif len(paired_reads) == 3:
+                            paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
+                            csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                        elif len(paired_reads) == 6:
+                            paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
+                            csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                        #elif len(paired_reads) == 0:
                             #print(f"The sample {sample_id} doesn't have read/spring files in the {parent_dir} ({paired_reads}).")
+                        #else:
+                            #print(len(paired_reads))
                     except FileNotFoundError:
                         print(f"WARNING: {parent_dir} does not exist regarding {sample_id}.")
                         print(sample_sheet)
@@ -75,12 +83,15 @@ class Missing(object):
     @staticmethod
     def check_format(fpath):
         if not fpath.startswith("/data"):
-            isilon_fpath = "/media/isilon/backup_hopper" + fpath
             fs2_fpath = "/fs2" + fpath
-            if os.path.exists(os.path.join(isilon_fpath, "Data/Intensities/BaseCalls")):
-                return isilon_fpath
-            elif os.path.exists(os.path.join(fs2_fpath, "Data/Intensities/BaseCalls")):
+            isilon_fpath = "/media/isilon/backup_hopper" + fpath
+            data_fpath = "/data" + fpath
+            if os.path.exists(os.path.join(fs2_fpath, "Data/Intensities/BaseCalls")):
                 return fs2_fpath
+            elif os.path.exists(os.path.join(isilon_fpath, "Data/Intensities/BaseCalls")):
+                return isilon_fpath
+            elif os.path.exists(os.path.join(data_fpath, "Data/Intensities/BaseCalls")):
+                return data_fpath
         return fpath
 
     @staticmethod
@@ -97,6 +108,19 @@ class Missing(object):
         return [filename.split("_")[0] for filename in os.listdir(dir_fpath)]
     
     @staticmethod
+    def filter_csv_dict(csv_dict, missing_samples):
+        filtered_csv_dict = {}
+        not_found = []
+        for missing_sample in missing_samples:
+            try:
+                filtered_csv_dict[missing_sample] = csv_dict[missing_sample]
+            except KeyError:
+                not_found.append(missing_sample)
+                #print(f"{missing_sample} could not be found")
+        print(f"{len(not_found)} samples could not be found")
+        return filtered_csv_dict, not_found
+    
+    @staticmethod
     def find_missing(meta_dict, analysis_dir_fnames, restore_dir):
         sample_run = ""
         missing_samples = []
@@ -105,7 +129,7 @@ class Missing(object):
             if sample["id"] not in analysis_dir_fnames:
                 if sample_run != sample["run"]: #if sample run changes based on 
                     ss_dict = {}
-                    sample_sheets = Missing.find_files("SampleSheet", sample["run"])
+                    sample_sheets = Missing.find_files(".csv", sample["run"])
                     if sample_sheets:
                         for sample_sheet in sample_sheets:
                             ss_dict |= Missing.parse_sample_sheet(sample_sheet, restore_dir)
@@ -119,7 +143,8 @@ class Missing(object):
                 missing_samples.append(sample["id"])
         print(f"{len(csv_dict.keys())} samples found")
         print(f"{len(missing_samples)} samples missing")
-        return csv_dict, "\n".join(missing_samples)
+        filtered_csv_dict, not_found = Missing.filter_csv_dict(csv_dict, missing_samples)
+        return filtered_csv_dict, "\n".join(not_found)
 
     @staticmethod
     def create_bash_script(csv_dict, restore_dir):
