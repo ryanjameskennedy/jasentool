@@ -31,14 +31,17 @@ class Validate(object):
         return self.search("cgmlst", "type", results["typing_result"])
 
     def get_mdb_cgv_data(self, db_collection, sample_id):
-        mdb_pvl = list(Database.get_pvl(db_collection, {"id": sample_id}))
-        mdb_mlst = list(Database.get_mlst(db_collection, {"id": sample_id}))
-        mdb_cgmlst = list(Database.get_cgmlst(db_collection, {"id": sample_id}))
-        mdb_pvl_present = int(mdb_pvl[0]["aribavir"]["lukS_PV"]["present"])
-        mdb_mlst_seqtype = str(mdb_mlst[0]["mlst"]["sequence_type"])
-        mdb_mlst_alleles = mdb_mlst[0]["mlst"]["alleles"]
-        mdb_cgmlst_alleles = mdb_cgmlst[0]["alleles"]
-        return {"pvl": mdb_pvl_present, "mlst_seqtype": mdb_mlst_seqtype, "mlst_alleles": mdb_mlst_alleles, "cgmlst_alleles": mdb_cgmlst_alleles}
+        mdb_pvl = list(Database.get_pvl(db_collection, {"id": sample_id, "metadata.QC": "OK"}))
+        mdb_mlst = list(Database.get_mlst(db_collection, {"id": sample_id, "metadata.QC": "OK"}))
+        mdb_cgmlst = list(Database.get_cgmlst(db_collection, {"id": sample_id, "metadata.QC": "OK"}))
+        try:
+            mdb_pvl_present = int(mdb_pvl[0]["aribavir"]["lukS_PV"]["present"])
+            mdb_mlst_seqtype = str(mdb_mlst[0]["mlst"]["sequence_type"]) if mdb_mlst[0]["mlst"]["sequence_type"] != "-" else str(None)
+            mdb_mlst_alleles = mdb_mlst[0]["mlst"]["alleles"]
+            mdb_cgmlst_alleles = mdb_cgmlst[0]["alleles"]
+            return {"pvl": mdb_pvl_present, "mlst_seqtype": mdb_mlst_seqtype, "mlst_alleles": mdb_mlst_alleles, "cgmlst_alleles": mdb_cgmlst_alleles}
+        except IndexError:
+            return False
 
     def get_fin_data(self, sample_json):
         fin_pvl_present = self.get_pvl(sample_json)
@@ -68,6 +71,10 @@ class Validate(object):
     def compare_data(self, sample_id, old_data, new_data):
         pvl_comp = int(old_data["pvl"] == new_data["pvl"])
         mlst_seqtype_comp = int(old_data["mlst_seqtype"] == new_data["mlst_seqtype"])
+        if mlst_seqtype_comp == 0:
+            mlst_at_list = [f'{old_data["mlst_alleles"][gene]},{new_data["mlst_alleles"][gene]}' for gene in sorted(old_data["mlst_alleles"].keys())]
+            mlst_at_str = ",".join(mlst_at_list)
+            print(f'{sample_id},{old_data["mlst_seqtype"]},{new_data["mlst_seqtype"]},{mlst_at_str}')
         mlst_alleles = self.compare_mlst_alleles(old_data["mlst_alleles"], new_data["mlst_alleles"])
         cgmlst_alleles = self.compare_cgmlst_alleles(old_data["cgmlst_alleles"], new_data["cgmlst_alleles"])
         return f"{sample_id},{pvl_comp},{mlst_seqtype_comp},{mlst_alleles},{cgmlst_alleles}"
@@ -83,10 +90,11 @@ class Validate(object):
                     print(f"The sample provided ({sample_id}) does not exist in the provided database ({Database.db_name}) or collection ({db_collection}).")
                     continue
                 mdb_data_dict = self.get_mdb_cgv_data(db_collection, sample_id)
-                species_name = self.get_species_name(sample_json)
-                fin_data_dict = self.get_fin_data(sample_json)
-                compared_data_output = self.compare_data(sample_id, mdb_data_dict, fin_data_dict)
-                csv_output += "\n" + compared_data_output
+                if mdb_data_dict:
+                    species_name = self.get_species_name(sample_json)
+                    fin_data_dict = self.get_fin_data(sample_json)
+                    compared_data_output = self.compare_data(sample_id, mdb_data_dict, fin_data_dict)
+                    csv_output += "\n" + compared_data_output
             if not combined_output:
                 utils.write_out_txt(csv_output, f"{output_fpaths[input_idx]}.csv")
                 csv_output = "pvl,mlst_seqtype,mlst_allele_matches(%),cgmlst_allele_matches(%)\n"
