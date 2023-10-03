@@ -99,7 +99,7 @@ class OptionsParser(object):
         output_fpath = os.path.splitext(options.output_file)[0] + "." + options.out_format
         in_format = os.path.splitext(input_file)[1].lstrip(".")
         if in_format == "tsv" and options.out_format == "bed":
-            output_txt = convert.targets2bed(target_file, options.accession)
+            output_txt = convert.targets2bed(input_file, options.accession)
             utils.write_out_txt(output_txt, output_fpath)
 
     def parse_options(self, options):
