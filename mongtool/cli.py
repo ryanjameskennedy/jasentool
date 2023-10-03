@@ -56,6 +56,12 @@ def __db_name(group, required):
 def __db_collection(group, required):
     group.add_argument('--db_collection', required=required, help='Mongodb collection name. Use: `show collections` to get db collection')
 
+def __out_format(group, required):
+    group.add_argument('-f', '--out_format', required=required, type=str, help='output format')
+
+def __accession(group, required):
+    group.add_argument('-a', '--accession', required=required, type=str, help='accession number')
+
 def __prefix(group):
     group.add_argument('--prefix', type=str, default='mongtool_results_', help='prefix for all output files')
 
@@ -118,13 +124,22 @@ def get_main_parser():
             __input_file(group, required=False, help='path to cgviz meta csv file')
             __output_file(group, required=False, help='path to mongo db output file')
         with arg_group(parser, 'optional arguments') as group:
-            __analysis_dir(group, required=False,)
-            __restore_dir(group, required=False,)
-            __restore_file(group, required=False,)
-            __missing_log(group, required=False,)
-            __assay(group, required=False,)
-            __platform(group, required=False,)
-            __sample_sheet(group, required=False,)
+            __analysis_dir(group, required=False)
+            __restore_dir(group, required=False)
+            __restore_file(group, required=False)
+            __missing_log(group, required=False)
+            __assay(group, required=False)
+            __platform(group, required=False)
+            __sample_sheet(group, required=False)
+            __help(group)
+
+    with subparser(sub_parsers, 'convert', 'Convert file format') as parser:
+        with arg_group(parser, 'required named arguments') as group:
+            __input_file(group, required=False, help='path to cgviz meta csv file')
+            __output_file(group, required=False, help='path to mongo db output file')
+        with arg_group(parser, 'optional arguments') as group:
+            __out_format(group, required=False)
+            __accession(group, required=False)
             __help(group)
 
     return main_parser
