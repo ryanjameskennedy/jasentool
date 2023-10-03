@@ -7,6 +7,7 @@ from mongtool.database import Database
 from mongtool.validate import Validate
 from mongtool.utils import Utils
 from mongtool.missing import Missing
+from mongtool.convert import Convert
 
 class OptionsParser(object):
     def __init__(self, version):
@@ -91,6 +92,16 @@ class OptionsParser(object):
             bash_script = missing.create_bash_script(csv_dict, options.restore_dir)
             utils.write_out_txt(bash_script, bash_fpath)
 
+    def convert(self, options):
+        utils = Utils()
+        convert = Convert()
+        input_file = options.input_file[0]
+        output_fpath = os.path.splitext(options.output_file)[0] + "." + options.out_format
+        in_format = os.path.splitext(input_file)[1].lstrip(".")
+        if in_format == "tsv" and options.out_format == "bed":
+            output_txt = convert.targets2bed(target_file, options.accession)
+            utils.write_out_txt(output_txt, output_fpath)
+
     def parse_options(self, options):
         if options.subparser_name == 'find':
             self.find(options)
@@ -103,3 +114,6 @@ class OptionsParser(object):
 
         elif options.subparser_name == 'missing':
             self.missing(options)
+
+        elif options.subparser_name == 'convert':
+            self.convert(options)
