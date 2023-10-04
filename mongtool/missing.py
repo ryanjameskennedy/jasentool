@@ -18,7 +18,7 @@ class Missing(object):
     @staticmethod
     def find_files(search_term, parent_dir):
         search_files = os.listdir(parent_dir)
-        return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file])
+        return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
 
     @staticmethod
     def edit_read_paths(reads, restore_dir):
@@ -51,7 +51,8 @@ class Missing(object):
                     try:
                         paired_reads = Missing.find_files(clarity_id, parent_dir)
                         if len(paired_reads) == 2 and paired_reads[0].endswith(".gz"):
-                            csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads] #fix w edit_read_paths
+                            csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
                         elif len(paired_reads) == 1 and paired_reads[0].endswith(".spring"):
                             spring_fpaths = paired_reads
                             (restored_spring_fpaths, paired_reads) = list(map(Missing.edit_read_paths, spring_fpaths, [restore_dir]*len(spring_fpaths)))[0]
@@ -59,17 +60,23 @@ class Missing(object):
                         elif len(paired_reads) == 4 and paired_reads[0].endswith(".gz"):
                             paired_reads = Missing.rm_double_dmltplx(paired_reads)
                             if len(paired_reads) == 2:
-                                csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                                restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads] #fix w edit_read_paths
+                                csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
+                                print(restored_reads_fpaths, paired_reads)
                             elif len(paired_reads) == 4:
                                 paired_reads_string = '\n-'.join(paired_reads)
                                 print(sample_id)
                                 print(f"There are 4 sets of reads related to sample {sample_id} from the {parent_dir}: \n-{paired_reads_string}\n")
                         elif len(paired_reads) == 3:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
-                            csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
+                            csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
+                            print(restored_reads_fpaths, paired_reads)
                         elif len(paired_reads) == 6:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
-                            csv_dict[sample_id] = [clarity_group_id, species, paired_reads]
+                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
+                            csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
+                            print(restored_reads_fpaths, paired_reads)
                         #elif len(paired_reads) == 0:
                             #print(f"The sample {sample_id} doesn't have read/spring files in the {parent_dir} ({paired_reads}).")
                         #else:
@@ -153,10 +160,20 @@ class Missing(object):
         shell_fail_count = "FAIL=0\n"
         shell_for_loop = 'for job in $PIDS; do wait $job || let "FAIL+=1"; done \nif [ "$FAIL" != "0" ]; \nthen \n\techo Failed to restore from backup \n\texit 2 \nfi \n'
         for sample in csv_dict:
+            jcp_command = ""
+            unspring_command = ""
             try:
-                spring_command = spring_command + f'/fs2/sw/bnf-scripts/jcp {csv_dict[sample][3][0]} {restore_dir}/ && /fs2/sw/bnf-scripts/unspring_file.pl {csv_dict[sample][4]} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
-            except IndexError:
-                continue
+                spring_fpaths, restored_fpaths = csv_dict[sample][3][0], csv_dict[sample][4]
+                read1, read2 = csv_dict[sample][2]
+                if not os.path.exists(restored_fpaths):
+                    jcp_command = f'/fs2/sw/bnf-scripts/jcp {spring_fpaths} {restore_dir}/ && '
+                if not os.path.exists(read1):
+                    unspring_command = f'/fs2/sw/bnf-scripts/unspring_file.pl {restored_fpaths} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
+                spring_command = spring_command + jcp_command + unspring_command
+            except TypeError:
+                for read_fpath in csv_dict[sample][4]:
+                    jcp_command = f'/fs2/sw/bnf-scripts/jcp {read_fpath} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
+                    spring_command = spring_command + jcp_command
         bash_script = shell_script_path + shell_fail_count + spring_command + shell_for_loop
         return bash_script
 
