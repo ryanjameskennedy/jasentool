@@ -17,8 +17,12 @@ class Missing(object):
 
     @staticmethod
     def find_files(search_term, parent_dir):
-        search_files = os.listdir(parent_dir)
-        return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
+        try:
+            search_files = os.listdir(parent_dir)
+            return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
+        except FileNotFoundError:
+            print(f"WARN: {parent_dir} does not exist!")
+            return False
 
     @staticmethod
     def edit_read_paths(reads, restore_dir):
@@ -62,21 +66,17 @@ class Missing(object):
                             if len(paired_reads) == 2:
                                 restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads] #fix w edit_read_paths
                                 csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
-                                print(restored_reads_fpaths, paired_reads)
                             elif len(paired_reads) == 4:
                                 paired_reads_string = '\n-'.join(paired_reads)
-                                print(sample_id)
                                 print(f"There are 4 sets of reads related to sample {sample_id} from the {parent_dir}: \n-{paired_reads_string}\n")
                         elif len(paired_reads) == 3:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
                             restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
                             csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
-                            print(restored_reads_fpaths, paired_reads)
                         elif len(paired_reads) == 6:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
                             restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
                             csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
-                            print(restored_reads_fpaths, paired_reads)
                         #elif len(paired_reads) == 0:
                             #print(f"The sample {sample_id} doesn't have read/spring files in the {parent_dir} ({paired_reads}).")
                         #else:
