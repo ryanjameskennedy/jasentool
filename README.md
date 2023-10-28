@@ -1,22 +1,22 @@
-# Mongtool v0.0.1: A mongodb validation tool for comaparing pipeline outputs
+# Jasentool v0.0.1: A mongodb validation tool for comaparing pipeline outputs
 ## Dependencies (latest)
 * python=3.11
 * pymongo
 
-## Using Mongtool
-### Use the help argument for information regarding the Mongtool's methods
+## Using Jasentool
+### Use the help argument for information regarding the Jasentool's methods
 ```
-mongtool -h
+jasentool -h
 ```
 
-### Use the method help argument for information regarding the input for each of Mongtool's methods (`find`, `insert`, `remove` and `validate`)
+### Use the method help argument for information regarding the input for each of Jasentool's methods (`find`, `insert`, `remove` and `validate`)
 ```
-mongtool <method> -h
+jasentool <method> -h
 ```
 
 ### Validate pipeline data
 ```
-mongtool validate (-i INPUT_FILE [INPUT_FILE ...] | --input_dir INPUT_DIR) --db_name DB_NAME --db_collection DB_COLLECTION -o OUTPUT_FILE [--address ADDRESS] [-h]
+jasentool validate (-i INPUT_FILE [INPUT_FILE ...] | --input_dir INPUT_DIR) --db_name DB_NAME --db_collection DB_COLLECTION -o OUTPUT_FILE [--address ADDRESS] [-h]
 ```
 
 ### Get samplesheet inputs
@@ -33,5 +33,5 @@ mongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.s
 
 ### Find missing samples
 ```
-mongtool missing -i <cgviz_meta.csv> --analysis_dir <jasen_analysis_results_dir> --restore_dir <restore_dir> --restore_file <restore_file.sh> -o <output_file.csv>
+jasentool missing -i <cgviz_meta.csv> --analysis_dir <jasen_analysis_results_dir> --restore_dir <restore_dir> --restore_file <restore_file.sh> -o <output_file.csv>
 ```

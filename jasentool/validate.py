@@ -1,8 +1,8 @@
 import os
 import sys
 import json
-from mongtool.database import Database
-from mongtool.utils import Utils
+from jasentool.database import Database
+from jasentool.utils import Utils
 
 class Validate(object):
     def get_sample_id(self, results):

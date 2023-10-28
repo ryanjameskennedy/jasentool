@@ -14,7 +14,7 @@ with open("README.md") as fin:
     long_description = fin.read()
 
 setup(
-    name="mongtool",
+    name="jasentool",
     version="1.0.0",
     description="A mongodb validation tool for comaparing pipeline outputs",
     long_description_markdown_filename=long_description,
@@ -26,6 +26,6 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     install_requires=["pymongo"],
-    entry_points={"console_scripts": ["mongtool=mongtool.__main__:main"]},
+    entry_points={"console_scripts": ["jasentool=jasentool.__main__:main"]},
     packages=find_packages(exclude=("tests")),
 )
