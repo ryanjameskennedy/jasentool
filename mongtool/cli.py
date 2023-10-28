@@ -63,7 +63,7 @@ def __accession(group, required):
     group.add_argument('-a', '--accession', required=required, type=str, help='accession number')
 
 def __prefix(group):
-    group.add_argument('--prefix', type=str, default='mongtool_results_', help='prefix for all output files')
+    group.add_argument('--prefix', type=str, default='jasentool_results_', help='prefix for all output files')
 
 def __combined_output(group):
     group.add_argument('--combined_output', dest='combined_output', action='store_true', help='combine all of the outputs into one output')
@@ -75,7 +75,7 @@ def __help(group):
     group.add_argument('-h', '--help', action='help', help='show help message')
 
 def get_main_parser():
-    main_parser = argparse.ArgumentParser(prog='mongtool', conflict_handler='resolve')
+    main_parser = argparse.ArgumentParser(prog='jasentool', conflict_handler='resolve')
     sub_parsers = main_parser.add_subparsers(help='--', dest='subparser_name')
     with subparser(sub_parsers, 'find', 'Find sample from given mongo db') as parser:
         with mutex_group(parser, required=True) as group:

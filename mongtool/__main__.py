@@ -1,14 +1,14 @@
 import sys
 import os
 
-from mongtool import __author__, __copyright__, __version__
-from mongtool.cli import get_main_parser
-from mongtool.main import OptionsParser
+from jasentool import __author__, __copyright__, __version__
+from jasentool.cli import get_main_parser
+from jasentool.main import OptionsParser
 
 def print_help():
     print('''
 
-                    ...::: Mongtool v%s :::...
+                    ...::: Jasentool v%s :::...
 Author(s): %s
 
 Description:
@@ -17,10 +17,10 @@ Description:
     pipeline data against that of the old data stored in mongodb 
     database.
 
-Usage: mongtool <method> <options> 
+Usage: jasentool <method> <options> 
 
 Information:
-    -V, --version       Display the version of Mongtool and exit.
+    -V, --version       Display the version of Jasentool and exit.
     -h,  --help         Print help.
 
 Methods:
@@ -37,7 +37,7 @@ def main():
         print_help()
         sys.exit(0)
     elif sys.argv[1] in {'-V', '--version'}:
-        print(f"Mongtool version {__version__} {__copyright__} {__author__}")
+        print(f"Jasentool version {__version__} {__copyright__} {__author__}")
         sys.exit(0)
     elif sys.argv[1] in {'-h', '--h', '-help', '--help'}:
         print_help()
