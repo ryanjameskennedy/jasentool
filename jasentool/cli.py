@@ -57,7 +57,7 @@ def __db_collection(group, required):
     group.add_argument('--db_collection', required=required, help='Mongodb collection name. Use: `show collections` to get db collection')
 
 def __out_format(group, required):
-    group.add_argument('-f', '--out_format', required=required, type=str, help='output format')
+    group.add_argument('-f', '--out_format', required=required, type=str, default="bed", help='output format')
 
 def __accession(group, required):
     group.add_argument('-a', '--accession', required=required, type=str, help='accession number')
@@ -135,7 +135,7 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'convert', 'Convert file format') as parser:
         with arg_group(parser, 'required named arguments') as group:
-            __input_file(group, required=False, help='path to cgviz meta csv file')
+            __input_file(group, required=False, help='path to targets tsv file')
             __output_file(group, required=False, help='path to mongo db output file')
         with arg_group(parser, 'optional arguments') as group:
             __out_format(group, required=False)
