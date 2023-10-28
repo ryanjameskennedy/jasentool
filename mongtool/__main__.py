@@ -24,9 +24,10 @@ Information:
     -h,  --help         Print help.
 
 Methods:
-    insert            Compare new pipeline data with old data.
-                Compare new pipeline data with old data.
+    insert              Compare new pipeline data with old data.
+    missing             Find data missing from Bonsai compared to cgviz.
     validate            Compare new pipeline data with old data.
+    convert             Convert cgmlst.org target files to bed files.
     
 ''' % (__version__, __author__))
 
