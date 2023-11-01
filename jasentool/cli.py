@@ -62,8 +62,17 @@ def __out_format(group, required):
 def __accession(group, required):
     group.add_argument('-a', '--accession', required=required, type=str, help='accession number')
 
+def __remote_hostname(group, required):
+    group.add_argument('--remote_hostname', required=required, type=str, default='rs-fs1.lunarc.lu.se', help='remote hostname')
+
 def __prefix(group):
     group.add_argument('--prefix', type=str, default='jasentool_results_', help='prefix for all output files')
+
+def __auto_start(group, required):
+    group.add_argument('--auto_start', required=required, dest='auto_start', action='store_true', default=False, help='automatically start')
+
+def __remote(group, required):
+    group.add_argument('--remote', required=required, dest='remote', action='store_true', default=False, help='remote copy')
 
 def __combined_output(group):
     group.add_argument('--combined_output', dest='combined_output', action='store_true', help='combine all of the outputs into one output')
@@ -147,6 +156,10 @@ def get_main_parser():
             __input_file(group, required=False, help='path to bjorn csv file')
             __output_file(group, required=False, help='path to fixed output csv file')
         with arg_group(parser, 'optional arguments') as group:
+            __output_dir(group, required=False)
+            __remote_hostname(group, required=False)
+            __auto_start(group, required=False)
+            __remote(group, required=False)
             __help(group)
 
     return main_parser
