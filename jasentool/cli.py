@@ -142,4 +142,11 @@ def get_main_parser():
             __accession(group, required=False)
             __help(group)
 
+    with subparser(sub_parsers, 'fix', 'Fix bjorn microbiology csv file') as parser:
+        with arg_group(parser, 'required named arguments') as group:
+            __input_file(group, required=False, help='path to bjorn csv file')
+            __output_file(group, required=False, help='path to fixed output csv file')
+        with arg_group(parser, 'optional arguments') as group:
+            __help(group)
+
     return main_parser

@@ -8,6 +8,7 @@ from jasentool.validate import Validate
 from jasentool.utils import Utils
 from jasentool.missing import Missing
 from jasentool.convert import Convert
+from jasentool.fix import Fix
 
 class OptionsParser(object):
     def __init__(self, version):
@@ -102,6 +103,10 @@ class OptionsParser(object):
             output_txt = convert.targets2bed(input_file, options.accession)
             utils.write_out_txt(output_txt, output_fpath)
 
+    def fix(self, options):
+        fix = Fix()
+        fix.fix_csv(options.input_file[0], options.output_file)
+
     def parse_options(self, options):
         if options.subparser_name == 'find':
             self.find(options)
@@ -117,3 +122,6 @@ class OptionsParser(object):
 
         elif options.subparser_name == 'convert':
             self.convert(options)
+
+        elif options.subparser_name == 'fix':
+            self.fix(options)
