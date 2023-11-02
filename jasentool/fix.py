@@ -7,7 +7,7 @@ class Fix(object):
     def fix_csv(input_file, output_fpath):
         assays = []
         out_fpaths = []
-        with open(input_file, 'rb') as csvfile:
+        with open(input_file, 'r') as csvfile:
             df = pd.read_csv(csvfile)
             df['assay'] = df['species']
             for assay, df_assay in df.groupby('assay'):
@@ -22,7 +22,7 @@ class Fix(object):
         utils = Utils()
         output_txt = ""
         out_fpaths = []
-        with open(input_file, 'rb') as shfile:
+        with open(input_file, 'r') as shfile:
             for line in shfile:
                 line = line.rstrip()
                 if line.startswith('/fs2/sw/bnf-scripts/start_nextflow_analysis.pl'):
