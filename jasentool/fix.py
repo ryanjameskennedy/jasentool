@@ -20,19 +20,20 @@ class Fix(object):
     @staticmethod
     def fix_sh(input_file, output_fpath, assays):
         utils = Utils()
-        output_txt = ""
+        output_content = ""
         out_fpaths = []
         with open(input_file, 'r') as shfile:
             for line in shfile:
                 line = line.rstrip()
                 if line.startswith('/fs2/sw/bnf-scripts/start_nextflow_analysis.pl'):
                     for assay in assays:
+                        output_txt = ""
                         line = f'/fs2/sw/bnf-scripts/start_nextflow_analysis.pl  $SCRIPTPATH/{os.path.splitext(output_fpath)[0]}_{assay}.csv'
                         out_fpath = f'{os.path.splitext(output_fpath)[0]}_{assay}.sh'
-                        output_txt += line+'\n'
+                        output_txt += output_content+line+'\n'
                         utils.write_out_txt(output_txt, out_fpath)
                         out_fpaths.append(out_fpath)
                     break
-                output_txt += line
+                output_content += line+'\n'
 
         return out_fpaths
