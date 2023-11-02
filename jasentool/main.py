@@ -106,12 +106,12 @@ class OptionsParser(object):
     def fix(self, options):
         utils = Utils()
         fix = Fix()
-        csv_files, assays = fix.fix_csv(options.input_file[0], options.output_file)
-        batch_files = fix.fix_sh(options.input_file[0], options.output_file, assays)
+        csv_files, assays = fix.fix_csv(options.csv_file, options.output_file)
+        batch_files = fix.fix_sh(options.sh_file, options.output_file, assays)
         if (options.remote or options.auto_start) and batch_files:
-            utils.copy_batch_and_csv_files(batch_files, csv_files, options.output_dir, options.remote_hostname, options.auto_start or options.remote)
+            utils.copy_batch_and_csv_files(batch_files, csv_files, options.remote_dir, options.remote_hostname, options.auto_start or options.remote)
             if options.auto_start:
-                utils.start_remote_pipelines(batch_files, options.output_dir)
+                utils.start_remote_pipelines(batch_files, options.remote_dir)
 
     def parse_options(self, options):
         if options.subparser_name == 'find':

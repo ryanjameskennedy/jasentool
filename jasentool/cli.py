@@ -23,6 +23,12 @@ def __input_dir(group, required, help):
 def __input_file(group, required, help):
     group.add_argument('-i', '--input_file', nargs='+', help=help)
 
+def __csv_file(group, required, help):
+    group.add_argument('--csv_file', required=required, help=help)
+
+def __sh_file(group, required, help):
+    group.add_argument('--sh_file', required=required, help=help)
+
 def __output_file(group, required, help):
     group.add_argument('-o', '--output_file', required=required, type=str, help=help)
 
@@ -34,6 +40,9 @@ def __analysis_dir(group, required):
 
 def __restore_dir(group, required):
     group.add_argument('--restore_dir', required=required, type=str, default='/fs2/seqdata/restored', help='directory user wishes spring files to be restored to')
+
+def __remote_dir(group, required):
+    group.add_argument('--remote_dir', required=required, type=str, default='/fs1/bjorn/jasen', help='directory user wishes spring files to be restored to')
 
 def __restore_file(group, required):
     group.add_argument('--restore_file', required=required, type=str, help='filepath bash shell script (.sh) to be output')
@@ -130,8 +139,8 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'missing', 'Find missing sample data from old runs') as parser:
         with arg_group(parser, 'required named arguments') as group:
-            __input_file(group, required=False, help='''path to cgviz meta csv file, created using: mongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run --query='{"metadata.QC":"OK"}' | grep -v FOHM | sed "1s/id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run/id,mlst,lukF_PV,lukS_PV,missing,QC,Comment,run/" > cgviz_meta.csv''')
-            __output_file(group, required=False, help='path to mongo db output file')
+            __input_file(group, required=True, help='''path to cgviz meta csv file, created using: mongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run --query='{"metadata.QC":"OK"}' | grep -v FOHM | sed "1s/id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run/id,mlst,lukF_PV,lukS_PV,missing,QC,Comment,run/" > cgviz_meta.csv''')
+            __output_file(group, required=True, help='path to mongo db output file')
         with arg_group(parser, 'optional arguments') as group:
             __analysis_dir(group, required=False)
             __restore_dir(group, required=False)
@@ -144,8 +153,8 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'convert', 'Convert file format') as parser:
         with arg_group(parser, 'required named arguments') as group:
-            __input_file(group, required=False, help='path to targets tsv file')
-            __output_file(group, required=False, help='path to mongo db output file')
+            __input_file(group, required=True, help='path to targets tsv file')
+            __output_file(group, required=True, help='path to mongo db output file')
         with arg_group(parser, 'optional arguments') as group:
             __out_format(group, required=False)
             __accession(group, required=False)
@@ -153,13 +162,14 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'fix', 'Fix bjorn microbiology csv file') as parser:
         with arg_group(parser, 'required named arguments') as group:
-            __input_file(group, required=False, help='path to bjorn csv file')
-            __output_file(group, required=False, help='path to fixed output csv file')
+            __csv_file(group, required=True, help='path to bjorn csv file')
+            __sh_file(group, required=True, help='path to bjorn sh file')
+            __output_file(group, required=True, help='path to fixed output csv file')
         with arg_group(parser, 'optional arguments') as group:
-            __output_dir(group, required=False)
+            __remote_dir(group, required=False)
             __remote_hostname(group, required=False)
-            __auto_start(group, required=False)
             __remote(group, required=False)
+            __auto_start(group, required=False)
             __help(group)
 
     return main_parser
