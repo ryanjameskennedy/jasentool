@@ -12,7 +12,7 @@ class Fix(object):
             df['assay'] = df['species']
             for assay, df_assay in df.groupby('assay'):
                 out_fpath = f'{os.path.splitext(output_fpath)[0]}_{assay}.csv'
-                df_assay.to_csv(out_fpath, encoding='utf-8')
+                df_assay.to_csv(out_fpath, encoding='utf-8', index=False)
                 out_fpaths.append(out_fpath)
                 assays.append(assay)
         return out_fpaths, assays
