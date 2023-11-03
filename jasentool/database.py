@@ -16,8 +16,8 @@ class Database(object):
         Database.db[collection].insert(data)
 
     @staticmethod
-    def find(collection, query):
-        return Database.db[collection].find(query)
+    def find(collection, query, fields):
+        return Database.db[collection].find(query, fields)
 
     @staticmethod
     def find_one(collection, query):
@@ -34,3 +34,17 @@ class Database(object):
     @staticmethod
     def get_cgmlst(collection, query):
         return Database.db[collection].find(query, {"_id": 0, "alleles": 1})
+    
+    @staticmethod
+    def get_meta_fields():
+        fields = {
+            "id": 1,
+            "mlst.sequence_type": 1,
+            "aribavir.lukF_PV.present": 1,
+            "aribavir.lukS_PV.present": 1,
+            "missing": 1,
+            "metadata.QC": 1,
+            "metadata.Comment": 1,
+            "run": 1
+        }
+        return fields

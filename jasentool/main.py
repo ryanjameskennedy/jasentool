@@ -49,9 +49,9 @@ class OptionsParser(object):
         Database.initialize(options.db_name)
         output_fpaths = self._get_output_fpaths(options.query, options.output_dir, options.output_file, options.prefix, options.combined_output)
         for query_idx, query in enumerate(options.query):
-            find = list(Database.find(options.db_collection, {"id": query}))
+            find = list(Database.find(options.db_collection, {"id": query}, {}))
             if not find:
-                find = list(Database.find(options.db_collection, {"sample_id": query}))
+                find = list(Database.find(options.db_collection, {"sample_id": query}, {}))
             pp = pprint.PrettyPrinter(indent=4)
             pp.pprint(find)
             #with open(output_fpaths[query_idx], 'w+') as fout:
@@ -75,13 +75,15 @@ class OptionsParser(object):
     def missing(self, options):
         utils = Utils()
         missing = Missing()
+        db = Database()
+        db.initialize(options.db_name)
         if options.sample_sheet:
             csv_dict = missing.parse_sample_sheet(options.input_file[0], options.restore_dir)
             utils.write_out_csv(csv_dict, options.assay, options.platform, options.output_file)
         if options.analysis_dir:
             log_fpath = os.path.splitext(options.missing_log)[0] + ".log"
             empty_fpath = os.path.splitext(options.output_file)[0] + "_empty.csv"
-            meta_dict = missing.parse_mongodb_csv(options.input_file[0])
+            meta_dict = db.find(options.db_collection, {"metadata.QC": "OK"}, db.get_meta_fields())
             analysis_dir_fnames = missing.parse_dir(options.analysis_dir)
             csv_dict, missing_samples_txt = missing.find_missing(meta_dict, analysis_dir_fnames, options.restore_dir)
             empty_files_dict, csv_dict = missing.remove_empty_files(csv_dict)
