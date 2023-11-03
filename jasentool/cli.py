@@ -139,8 +139,9 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'missing', 'Find missing sample data from old runs') as parser:
         with arg_group(parser, 'required named arguments') as group:
-            __input_file(group, required=True, help='''path to cgviz meta csv file, created using: mongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run --query='{"metadata.QC":"OK"}' | grep -v FOHM | sed "1s/id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run/id,mlst,lukF_PV,lukS_PV,missing,QC,Comment,run/" > cgviz_meta.csv''')
             __output_file(group, required=True, help='path to mongo db output file')
+            __db_name(group, required=True)
+            __db_collection(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
             __analysis_dir(group, required=False)
             __restore_dir(group, required=False)

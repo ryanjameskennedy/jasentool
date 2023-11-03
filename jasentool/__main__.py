@@ -24,10 +24,12 @@ Information:
     -h,  --help         Print help.
 
 Methods:
+    find                Find samples in given db.
     insert              Compare new pipeline data with old data.
     missing             Find data missing from Bonsai compared to cgviz.
     validate            Compare new pipeline data with old data.
     convert             Convert cgmlst.org target files to bed files.
+    fix                 Fix output files from bjorn.
     
 ''' % (__version__, __author__))
 
