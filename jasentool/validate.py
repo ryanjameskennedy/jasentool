@@ -12,7 +12,7 @@ class Validate(object):
         return results["species_prediction"][0]["scientific_name"]
 
     def _check_exists(self, db_collection, sample_id):
-        return (True if list(Database.find(db_collection, {"id": sample_id})) else False)
+        return (True if list(Database.find(db_collection, {"id": sample_id}, {})) else False)
 
     def search(self, search_query, search_kw, search_list):
         return [element for element in search_list if element[search_kw] == search_query]

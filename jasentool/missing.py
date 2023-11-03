@@ -102,15 +102,6 @@ class Missing(object):
         return fpath
 
     @staticmethod
-    def parse_mongodb_csv(input_fpath):
-        with open(input_fpath, "rb") as csvfile:
-            meta = pd.read_csv(csvfile)
-            meta = meta.drop(columns=["mlst", "lukF_PV", "lukS_PV", "missing", "QC", "Comment"])
-            meta["run"] = meta["run"].apply(lambda x: Missing.check_format(x))
-            meta_dict = meta.to_dict(orient="records")
-        return meta_dict
-    
-    @staticmethod
     def parse_dir(dir_fpath):
         return [filename.split("_")[0] for filename in os.listdir(dir_fpath)]
     
