@@ -26,12 +26,12 @@ grep saureus /data/*/*/SampleSheet.csv > saureus_data_sample_sheet.csv
 grep saureus /media/isilon/backup_hopper/seqdata/*/*/SampleSheet.csv > saureus_isilon_sample_sheet.csv
 ```
 
-### Get cgviz meta csv
-```
-mongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run --query='{"metadata.QC":"OK"}' | grep -v FOHM | sed "1s/id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run/id,mlst,lukF_PV,lukS_PV,missing,QC,Comment,run/" > cgviz_meta.csvmongoexport --quiet --db=cgviz --collection=sample --type=csv --fields=id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run --query='{"metadata.QC":"OK"}' | grep -v FOHM | sed "1s/id,mlst.sequence_type,aribavir.lukF_PV.present,aribavir.lukS_PV.present,missing,metadata.QC,metadata.Comment,run/id,mlst,lukF_PV,lukS_PV,missing,QC,Comment,run/" > cgviz_meta.csv
-```
-
 ### Find missing samples
 ```
-jasentool missing -i <cgviz_meta.csv> --analysis_dir <jasen_analysis_results_dir> --restore_dir <restore_dir> --restore_file <restore_file.sh> -o <output_file.csv>
+jasentool missing --db_name <db_name> --db_collection <db_collection> --analysis_dir <jasen_analysis_results_dir> --restore_dir <restore_dir> --restore_file <restore_file.sh> -o <output_file.csv>
+```
+
+### Fix bjorn csv
+```
+jasentool fix --csv_file /data/tmp/multi_microbiology.csv --sh_file /data/tmp/multi_microbiology.sh -o <flow_cell_id>_jasen.csv --remote_dir /fs1/ryan/pipelines/jasen/bjorn/ --remote
 ```
