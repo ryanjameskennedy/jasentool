@@ -25,7 +25,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3.10",
     ],
-    install_requires=["pymongo"],
+    install_requires=["pymongo", "openpyxl", "biopython"],
     entry_points={"console_scripts": ["jasentool=jasentool.__main__:main"]},
     packages=find_packages(exclude=("tests")),
 )
