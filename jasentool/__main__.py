@@ -30,7 +30,7 @@ Methods:
     validate            Compare new pipeline data with old data.
     convert             Convert cgmlst.org target files to bed files.
     fix                 Fix output files from bjorn.
-    
+    converge            Converge tuberculosis mutation catlogues.
 ''' % (__version__, __author__))
 
 def main():
