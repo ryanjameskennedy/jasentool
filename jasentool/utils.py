@@ -4,6 +4,7 @@ import os
 import csv
 import shutil
 import pathlib
+import requests
 import subprocess
 import pandas as pd
 from time import sleep
@@ -61,3 +62,21 @@ class Utils(object):
                     ["ssh", remote_hostname, "bash", f"{remote_dir}/{os.path.basename(batch_file)}"],
                     close_fds=True
                 )
+
+    @staticmethod
+    def download_and_save_file(url, output_filepath):
+        try:
+            # Make a request to the URL
+            response = requests.get(url, stream=True)
+            response.raise_for_status()  # Raise an error for bad responses
+
+            # Open the output file in binary write mode
+            with open(output_filepath, 'wb') as output_file:
+                # Iterate over the content in chunks and write to the file
+                for chunk in response.iter_content(chunk_size=8192):
+                    output_file.write(chunk)
+
+            print(f"File downloaded and saved to: {output_filepath}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading the file: {e}")
