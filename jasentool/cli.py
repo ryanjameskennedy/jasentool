@@ -173,4 +173,10 @@ def get_main_parser():
             __auto_start(group, required=False)
             __help(group)
 
+    with subparser(sub_parsers, 'converge', 'Converge TB mutation catalogues') as parser:
+        with arg_group(parser, 'required named arguments') as group:
+            __output_dir(group, required=True)
+        with arg_group(parser, 'optional arguments') as group:
+            __help(group)
+
     return main_parser
