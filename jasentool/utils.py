@@ -8,6 +8,7 @@ import requests
 import subprocess
 import pandas as pd
 from time import sleep
+from zipfile import ZipFile 
 
 class Utils(object):
     @staticmethod
@@ -80,3 +81,8 @@ class Utils(object):
 
         except requests.exceptions.RequestException as e:
             print(f"Error downloading the file: {e}")
+
+    @staticmethod
+    def unzip(zip_file, outdir):
+        with ZipFile(zip_file, 'r') as zip_object:
+            zip_object.extractall(path=outdir)
