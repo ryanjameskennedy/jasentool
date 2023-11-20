@@ -86,3 +86,11 @@ class Utils(object):
     def unzip(zip_file, outdir):
         with ZipFile(zip_file, 'r') as zip_object:
             zip_object.extractall(path=outdir)
+
+    @staticmethod
+    def copy_file(source, destination):
+        try:
+            shutil.copy(source, destination)
+            print(f"File copied from {source} to {destination}")
+        except Exception as e:
+            print(f"Error copying file: {e}")
