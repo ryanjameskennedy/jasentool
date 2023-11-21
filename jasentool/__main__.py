@@ -31,6 +31,7 @@ Methods:
     convert             Convert cgmlst.org target files to bed files.
     fix                 Fix output files from bjorn.
     converge            Converge tuberculosis mutation catlogues.
+    qc                  Extract QC values after alignment.
 ''' % (__version__, __author__))
 
 def main():
