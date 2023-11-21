@@ -10,6 +10,7 @@ from jasentool.missing import Missing
 from jasentool.convert import Convert
 from jasentool.fix import Fix
 from jasentool.converge import Converge
+from jasentool.qc import QC
 
 class OptionsParser(object):
     def __init__(self, version):
@@ -120,6 +121,11 @@ class OptionsParser(object):
         converge = Converge()
         converge.run(options.output_dir)
 
+    def qc(self, options):
+        qc = QC(options)
+        json_result = qc.run()
+        qc.write_json_result(json_result, options.output_file)
+
     def parse_options(self, options):
         if options.subparser_name == 'find':
             self.find(options)
@@ -141,3 +147,6 @@ class OptionsParser(object):
 
         elif options.subparser_name == 'converge':
             self.converge(options)
+        
+        elif options.subparser_name == 'qc':
+            self.qc(options)
