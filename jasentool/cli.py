@@ -17,6 +17,9 @@ def arg_group(parser, name):
 def __query(group, required):
     group.add_argument('-q', '--query', required=required, nargs='+', help='sample query')
 
+def __sample_id(group, required):
+    group.add_argument('--sample_id', required=required, type=str, help='sample ID')
+
 def __input_dir(group, required, help):
     group.add_argument('--input_dir', required=required, help=help)
 
@@ -28,6 +31,18 @@ def __csv_file(group, required, help):
 
 def __sh_file(group, required, help):
     group.add_argument('--sh_file', required=required, help=help)
+
+def __bam_file(group, required, help):
+    group.add_argument('--bam_file', required=required, type=str, help='input bam file')
+
+def __bed_file(group, required, help):
+    group.add_argument('--bed_file', required=required, type=str, help='input bed file')
+
+def __baits_file(group, required, help):
+    group.add_argument('--baits_file', required=required, type=str, default=None, help='input bam file')
+
+def __reference(group, required, help):
+    group.add_argument('--reference', required=required, type=str, help=help)
 
 def __output_file(group, required, help):
     group.add_argument('-o', '--output_file', required=required, type=str, help=help)
@@ -88,6 +103,9 @@ def __combined_output(group):
 
 def __sample_sheet(group, required):
     group.add_argument('--sample_sheet', required=required, dest='sample_sheet', action='store_true', help='sample sheet input')
+
+def __cpus(group):
+    group.add_argument('--cpus', dest='cpus', type=int, default=2, help='input cpus')
 
 def __help(group):
     group.add_argument('-h', '--help', action='help', help='show help message')
@@ -177,6 +195,18 @@ def get_main_parser():
         with arg_group(parser, 'required named arguments') as group:
             __output_dir(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
+            __help(group)
+
+    with subparser(sub_parsers, 'qc', 'Run qc on bwa alignment') as parser:
+        with arg_group(parser, 'required named arguments') as group:
+            __sample_id(group, required=True)
+            __bam_file(group, required=True)
+            __reference(group, required=True, help='reference fasta file')
+            __output_file(group, required=True, help='path to qc json output file')
+        with arg_group(parser, 'optional arguments') as group:
+            __bed_file(group, required=False)
+            __baits_file(group, required=False)
+            __cpus(group)
             __help(group)
 
     return main_parser
