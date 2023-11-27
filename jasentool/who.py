@@ -1,12 +1,16 @@
+import os
 import re
 import pandas as pd
 from tqdm import tqdm
+from jasentool.utils import Utils
 
-class Convert(object):
+class WHO(object):
     def __init__(self):
         self.aa_dict_1 = self.get_aa_dict()
         self.aa_dict_2 = self.inv_dict()
         self.nucleotide_complements = self.get_nt_complements()
+        self.re_c, self.re_p, self.re_d, self.re_i = self.setup_re()
+        self.re_attr = re.compile('Name=([^;]+).*locus_tag=([^;|\n]+)')
 
     def get_aa_dict(self):
         return {
@@ -45,7 +49,7 @@ class Convert(object):
             'T': 'A',
             'A': 'T',
         }
-    
+
     def setup_re(self):
         # Setup the regular expressions
         re_c = re.compile('^(\w+)_([actg])(-*\d+)([actg])$') #regex pattern for 
@@ -56,10 +60,10 @@ class Convert(object):
 
     def lower_row(self, row):
         return row.str.lower()
-    
-    def read_files(self, gff, xlsx_filepath, h37rv_filepath):
+
+    def read_files(self, gff_filepath, xlsx_filepath, h37rv_filepath):
         # Load the reference GFF file
-        gff = pd.read_csv(gff, names=['seqid', 'source', 'type', 'start', 'end', 'score', 'strand', 'phase', 'attributes'], sep='\t', header=None)
+        gff = pd.read_csv(gff_filepath, names=['seqid', 'source', 'type', 'start', 'end', 'score', 'strand', 'phase', 'attributes'], sep='\t', header=None)
         # Load the WHO catalogue
         catalogue = pd.read_excel(xlsx_filepath, sheet_name='Mutation_catalogue', header=[0,1]).set_index([('variant (common_name)', 'Unnamed: 2_level_1')])
         # Load the reference genome to impute missing data from deletions
@@ -69,10 +73,10 @@ class Convert(object):
                 h37rv += line.replace('\n', '')
         return gff, catalogue, h37rv
 
-    def process_variant(self, variant, gff_dict, re_c, re_p, re_d, re_i):
+    def process_variant(self, variant, gff_dict):
         '''Translates variants in the WHO catalogue format to HGVS'''
 
-        c_match = re_c.match(variant)
+        c_match = self.re_c.match(variant)
         if c_match:
             if gff_dict[c_match[1]]['type'] == 'rRNA':
                 v_type = 'n'
@@ -84,11 +88,11 @@ class Convert(object):
                 alt = c_match[4].upper()
             return (c_match[1], v_type, '{}.{}{}>{}'.format(v_type, c_match[3], ref, alt), False, None)
 
-        p_match = re_p.match(variant)
+        p_match = self.re_p.match(variant)
         if p_match:
             return (p_match[1], 'p', 'p.{}{}{}'.format(self.aa_dict_2[p_match[2].upper()], p_match[3], self.aa_dict_2[p_match[4].upper()]), False, None)
 
-        d_match = re_d.match(variant)
+        d_match = self.re_d.match(variant)
         if d_match:
             if int(d_match[3]) != len(d_match[4]) - len(d_match[5]):
                 return (None, None, None, True, 'length mismatch')
@@ -114,7 +118,7 @@ class Convert(object):
                         hgvs.append(v)
                 return (d_match[1], 'c', '|'.join(hgvs), False, None)
 
-        i_match = re_i.match(variant)
+        i_match = self.re_i.match(variant)
         if i_match:
             if int(i_match[3]) != len(i_match[5]) - len(i_match[4]):
                 return (None, None, None, True, 'length mismatch')
@@ -135,10 +139,19 @@ class Convert(object):
 
         return (None, None, None, True, 'does not match indel or variant')
 
+    def extract_info(self, info_string):
+        if pd.notna(info_string):
+            match = self.re_attr.search(info_string)
+            if match:
+                if len(match.groups([1, 2])) != 2:
+                    print(match.groups([1, 2]))
+                return pd.Series(match.groups([1, 2]))
+        return pd.Series([None, None])
+
     def get_gene_info(self, gff):
         # Get the gene information from the GFF file
-        info_regex = re.compile('Locus=(.*);Name=(.*);Function=')
-        gff[['locus_tag', 'name']] = gff.attributes.apply(lambda info: pd.Series(info_regex.match(info).groups([1,2])))
+        # Apply the function to the 'attributes' column
+        gff[['locus_tag', 'name']] = gff.attributes.apply(self.extract_info)
 
         gff_dict = {}
         for _, row in gff.iterrows():
@@ -178,10 +191,10 @@ class Convert(object):
         classified = pd.DataFrame(classified, columns=['variant', 'drug', 'classification', 'genome_position', 'who_original'])
         return classified
 
-    def var2hgvs(self, classified, gff_dict, re_c, re_p, re_d, re_i):
+    def var2hgvs(self, classified, gff_dict):
         # Convert the variants to HGVS format
         for idx, row in tqdm(classified.iterrows(), total=classified.shape[0]):
-            x = Convert.process_variant(row.variant, self.aa_dict_2, gff_dict, re_c, re_p, re_d, re_i)
+            x = self.process_variant(row.variant, gff_dict)
             classified.loc[idx, 'gene'] = x[0]
             classified.loc[idx, 'type'] = x[1]
             classified.loc[idx, 'hgvs'] = x[2]
@@ -189,30 +202,33 @@ class Convert(object):
             classified.loc[idx, 'fail_reason'] = x[4]
         return classified
 
-    def impute_del(self, classified, gff_dict, h37rv, re_d, re_i):
+    def impute_del(self, classified, gff_dict, h37rv):
         # Impute missing data for deletions
         length_mismatch = classified[classified.fail_reason == 'length mismatch'].sort_values(by='variant', key=self.lower_row)
 
         for idx, row in tqdm(length_mismatch.iterrows(), total=length_mismatch.shape[0]):
-            d_match = re_d.match(row.variant)
+            d_match = self.re_d.match(row.variant)
             if d_match:
                 if not gff_dict[d_match[1]]['strand']:
                     indexing_correction = -1 if int(d_match[2]) < 0 else -2 # correct for 0 based python indexing (-1 if promotor, -2 if within gene)
-                    start = gff_dict[d_match[1]]['start'] + int(d_match[2]) + indexing_correction
+                    start = int(gff_dict[d_match[1]]['start']) + int(d_match[2]) + int(indexing_correction)
                     end = start + int(d_match[3]) + len(d_match[5]) # add the lenght of the alt allele to account for the bases not part of the indel
-                    complete_variant = '{}_{}_del_{}_{}_{}'.format(d_match[1], d_match[2], d_match[3], h37rv[start:end].lower(), d_match[5])
+                    try:
+                        complete_variant = '{}_{}_del_{}_{}_{}'.format(d_match[1], d_match[2], d_match[3], h37rv[start:end].lower(), d_match[5])
+                    except TypeError:
+                        print(f"{start}: {type(start)}\n{end}: {type(end)}")
                     classified.loc[idx, 'complete_variant'] = complete_variant
                     classified.loc[idx, 'complete_variant_fail'] = False
                 else:
                     indexing_correction = -1 if int(d_match[2]) < 0 else 0 # correct for 0 based python indexing (-1 if promotor, 0 if within gene)
-                    start = gff_dict[d_match[1]]['end'] - int(d_match[2]) + indexing_correction # subtract d_match[2] instead of adding as this is the opposite strand
+                    start = int(gff_dict[d_match[1]]['end']) - int(d_match[2]) + int(indexing_correction) # subtract d_match[2] instead of adding as this is the opposite strand
                     end = start + int(d_match[3]) + len(d_match[5]) # add the lenght of the alt allele to account for the bases not part of the indel
                     complete_variant = '{}_{}_del_{}_{}_{}'.format(d_match[1], d_match[2], d_match[3], h37rv[start:end].lower(), d_match[5])
                     classified.loc[idx, 'complete_variant'] = complete_variant
                     classified.loc[idx, 'complete_variant_fail'] = False
                 continue
 
-            i_match = re_i.match(row.variant)
+            i_match = self.re_i.match(row.variant)
             if i_match:
                 classified.loc[idx, 'complete_variant_fail'] = True
                 classified.loc[idx, 'complete_variant_fail_reason'] = 'Not assuming for insertions'
@@ -223,12 +239,12 @@ class Convert(object):
                 continue
         return classified
     
-    def imp2hgvs(self, classified, gff_dict, re_c, re_p, re_d, re_i):
+    def imp2hgvs(self, classified, gff_dict):
         # Convert imputed deletions to HGVS format
         for idx, row in tqdm(classified[classified.complete_variant_fail == False].iterrows(), total=classified[classified.complete_variant_fail == False].shape[0]):
             if row.complete_variant_fail:
                 continue
-            x = Convert.process_variant(row.complete_variant, gff_dict, re_c, re_p, re_d, re_i)
+            x = self.process_variant(row.complete_variant, gff_dict)
             classified.loc[idx, 'gene'] = x[0]
             classified.loc[idx, 'type'] = x[1]
             classified.loc[idx, 'hgvs'] = x[2]
@@ -240,13 +256,17 @@ class Convert(object):
         # Write results to csv file
         classified.to_csv(csv_outpath, index=False)
 
-    def run(self, gff_filepath, xlsx_filepath, h37rv_filepath, csv_outpath):
-        re_c, re_p, re_d, re_i = self.setup_re()
-        gff, catalogue, h37rv = self.read_files(gff_filepath, xlsx_filepath, h37rv_filepath)
+    def _parse(self, fasta_filepath, gff_filepath, download_dir):
+        utils = Utils()
+        who_url = "https://apps.who.int/iris/bitstream/handle/10665/341906/WHO-UCN-GTB-PCI-2021.7-eng.xlsx"
+        who_filepath = os.path.join(download_dir, "who.xlsx")
+        utils.download_and_save_file(who_url, who_filepath)
+        gff, catalogue, h37rv = self.read_files(gff_filepath, who_filepath, fasta_filepath)
         gff_dict = self.get_gene_info(gff)
         classified = self.prep_catalogue(catalogue)
-        classified = self.var2hgvs(classified, gff_dict, re_c, re_p, re_d, re_i)
-        classified = self.impute_del(classified, gff_dict, h37rv, re_d, re_i)
-        classified = self.imp2hgvs(classified, gff_dict, re_c, re_p, re_d, re_i)
+        classified = self.var2hgvs(classified, gff_dict)
+        classified = self.impute_del(classified, gff_dict, h37rv)
+        classified = self.imp2hgvs(classified, gff_dict)
+        csv_outpath = os.path.join(download_dir, "who.csv")
         self.write_out(classified, csv_outpath)
-
+        return classified
