@@ -32,13 +32,13 @@ def __csv_file(group, required, help):
 def __sh_file(group, required, help):
     group.add_argument('--sh_file', required=required, help=help)
 
-def __bam_file(group, required, help):
+def __bam_file(group, required):
     group.add_argument('--bam_file', required=required, type=str, help='input bam file')
 
-def __bed_file(group, required, help):
+def __bed_file(group, required):
     group.add_argument('--bed_file', required=required, type=str, help='input bed file')
 
-def __baits_file(group, required, help):
+def __baits_file(group, required):
     group.add_argument('--baits_file', required=required, type=str, default=None, help='input bam file')
 
 def __reference(group, required, help):
@@ -193,6 +193,7 @@ def get_main_parser():
 
     with subparser(sub_parsers, 'converge', 'Converge TB mutation catalogues') as parser:
         with arg_group(parser, 'required named arguments') as group:
+            __input_dir(group, required=True, help='path to tbdb directory')
             __output_dir(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
             __help(group)

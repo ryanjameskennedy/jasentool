@@ -119,7 +119,7 @@ class OptionsParser(object):
 
     def converge(self, options):
         converge = Converge()
-        converge.run(options.output_dir)
+        converge.run(options.input_dir, options.output_dir)
 
     def qc(self, options):
         qc = QC(options)
