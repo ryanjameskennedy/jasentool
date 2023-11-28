@@ -9,6 +9,7 @@ class WHO(object):
         self.aa_dict_1 = self.get_aa_dict()
         self.aa_dict_2 = self.inv_dict()
         self.nucleotide_complements = self.get_nt_complements()
+        self.drug_dict = self.get_drug_dict()
         self.re_c, self.re_p, self.re_d, self.re_i = self.setup_re()
         self.re_attr = re.compile('Name=([^;]+).*locus_tag=([^;|\n]+)')
 
@@ -48,6 +49,25 @@ class WHO(object):
             'G': 'C',
             'T': 'A',
             'A': 'T',
+        }
+
+    def get_drug_dict(self):
+        return {
+            'RIF': 'rifampicin',
+            'INH': 'isoniazid',
+            'EMB': 'ethambutol',
+            'PZA': 'pyrazinamide',
+            'LEV': 'levofloxacin',
+            'MXF': 'moxifloxacin',
+            'BDQ': 'bedaquiline',
+            'LZD': 'linezolid',
+            'CFZ': 'clofazimine',
+            'DLM': 'delamanid',
+            'AMI': 'amikacin',
+            'STM': 'streptomycin',
+            'ETH': 'ethionamide',
+            'KAN': 'kanamycin',
+            'CAP': 'capreomycin'
         }
 
     def setup_re(self):
@@ -175,7 +195,8 @@ class WHO(object):
         classified = []
         v = re.compile('^(.*) \((.*)\)')
         for var, row in catalogue[catalogue[('FINAL CONFIDENCE GRADING', 'Unnamed: 51_level_1')].apply(lambda conf: conf != 'combo')].iterrows():
-            drug = row[('drug', 'Unnamed: 0_level_1')]
+            drug_key = row[('drug', 'Unnamed: 0_level_1')]
+            drug = self.drug_dict[drug_key]
             v_match = v.match(var)
             if v_match:
                 # Include all variants listed
@@ -184,22 +205,22 @@ class WHO(object):
                 variants = [v_match[1]]
             else:
                 variants = [var]
-            category = row[('FINAL CONFIDENCE GRADING', 'Unnamed: 51_level_1')].split(')')[0]
+            category = ' '.join(row[('FINAL CONFIDENCE GRADING', 'Unnamed: 51_level_1')].split(' ')[1:])
             genome_pos = '{:.0f}'.format(row[('Genome position', 'Unnamed: 3_level_1')])
             for variant in variants:
-                classified.append([variant, drug, category, genome_pos, var])
-        classified = pd.DataFrame(classified, columns=['variant', 'drug', 'classification', 'genome_position', 'who_original'])
+                classified.append([variant, drug, 'resistance', '', 'https://www.who.int/publications/i/item/9789240028173', category])
+        classified = pd.DataFrame(classified, columns=['variant', 'Drug', 'Confers', 'Interaction', 'Literature', 'WHO Confidence'])
         return classified
 
     def var2hgvs(self, classified, gff_dict):
         # Convert the variants to HGVS format
         for idx, row in tqdm(classified.iterrows(), total=classified.shape[0]):
-            x = self.process_variant(row.variant, gff_dict)
-            classified.loc[idx, 'gene'] = x[0]
-            classified.loc[idx, 'type'] = x[1]
-            classified.loc[idx, 'hgvs'] = x[2]
-            classified.loc[idx, 'fail'] = x[3]
-            classified.loc[idx, 'fail_reason'] = x[4]
+            gene, var_type, variant, fail, fail_reason = self.process_variant(row.variant, gff_dict)
+            classified.loc[idx, 'gene'] = gene
+            classified.loc[idx, 'hgvs'] = variant
+            classified.loc[idx, 'type'] = var_type
+            classified.loc[idx, 'fail'] = fail
+            classified.loc[idx, 'fail_reason'] = fail_reason
         return classified
 
     def impute_del(self, classified, gff_dict, h37rv):
@@ -244,15 +265,15 @@ class WHO(object):
         for idx, row in tqdm(classified[classified.complete_variant_fail == False].iterrows(), total=classified[classified.complete_variant_fail == False].shape[0]):
             if row.complete_variant_fail:
                 continue
-            x = self.process_variant(row.complete_variant, gff_dict)
-            classified.loc[idx, 'gene'] = x[0]
-            classified.loc[idx, 'type'] = x[1]
-            classified.loc[idx, 'hgvs'] = x[2]
-            classified.loc[idx, 'fail'] = x[3]
-            classified.loc[idx, 'fail_reason'] = x[4]
+            gene, var_type, variant, fail, fail_reason = self.process_variant(row.complete_variant, gff_dict)
+            classified.loc[idx, 'gene'] = gene
+            classified.loc[idx, 'hgvs'] = variant
+            classified.loc[idx, 'type'] = var_type
+            classified.loc[idx, 'fail'] = fail
+            classified.loc[idx, 'fail_reason'] = fail_reason
         return classified
 
-    def write_out(self, classified, csv_outpath):
+    def write_out_csv(self, classified, csv_outpath):
         # Write results to csv file
         classified.to_csv(csv_outpath, index=False)
 
@@ -260,13 +281,15 @@ class WHO(object):
         utils = Utils()
         who_url = "https://apps.who.int/iris/bitstream/handle/10665/341906/WHO-UCN-GTB-PCI-2021.7-eng.xlsx"
         who_filepath = os.path.join(download_dir, "who.xlsx")
-        utils.download_and_save_file(who_url, who_filepath)
+        #utils.download_and_save_file(who_url, who_filepath)
         gff, catalogue, h37rv = self.read_files(gff_filepath, who_filepath, fasta_filepath)
         gff_dict = self.get_gene_info(gff)
         classified = self.prep_catalogue(catalogue)
         classified = self.var2hgvs(classified, gff_dict)
         classified = self.impute_del(classified, gff_dict, h37rv)
         classified = self.imp2hgvs(classified, gff_dict)
+        classified.rename(columns={'hgvs': 'Mutation', 'gene': 'Gene'}, inplace=True)
+        classified = classified.drop(columns=['variant', 'type', 'fail', 'fail_reason', 'complete_variant', 'complete_variant_fail', 'complete_variant_fail_reason'])
         csv_outpath = os.path.join(download_dir, "who.csv")
-        self.write_out(classified, csv_outpath)
+        self.write_out_csv(classified, csv_outpath)
         return classified
