@@ -9,7 +9,7 @@
 jasentool -h
 ```
 
-### Use the method help argument for information regarding the input for each of Jasentool's methods (`find`, `insert`, `remove` and `validate`)
+### Use the method help argument for information regarding the input for each of Jasentool's methods (`find`, `insert`, `remove`, `validate`, `missing`, `fix`, `convert`, `converge`, `qc`)
 ```
 jasentool <method> -h
 ```
