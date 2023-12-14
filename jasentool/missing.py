@@ -19,10 +19,12 @@ class Missing(object):
     def find_files(search_term, parent_dir):
         try:
             search_files = os.listdir(parent_dir)
-            return sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
         except FileNotFoundError:
-            print(f"WARN: {parent_dir} does not exist!")
-            return False
+            print(f"WARN: {parent_dir} does not exist! Trying to fix.")
+        finally:
+            search_files = os.listdir(parent_dir)
+            found_files = sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
+            return found_files
 
     @staticmethod
     def edit_read_paths(reads, restore_dir):
@@ -89,6 +91,12 @@ class Missing(object):
 
     @staticmethod
     def check_format(fpath):
+        if fpath.startswith("/fs1") and not os.path.exists(os.path.join(fpath, "Data/Intensities/BaseCalls")):
+            print(f"WARN: {fpath} does not exist! Fixing by removing '/fs1' prefix.")
+            fpath = fpath.replace("/fs1", "")
+        if fpath.startswith("NovaSeq"):
+            fpath = "/seqdata/" + fpath
+            print(f"WARN: {fpath} does not exist! Fixing by adding '/seqdata/' as a prefix.")
         if not fpath.startswith("/data"):
             fs2_fpath = "/fs2" + fpath
             isilon_fpath = "/media/isilon/backup_hopper" + fpath
@@ -99,6 +107,10 @@ class Missing(object):
                 return isilon_fpath
             elif os.path.exists(os.path.join(data_fpath, "Data/Intensities/BaseCalls")):
                 return data_fpath
+            elif os.path.exists(fpath):
+                return fpath.rstrip("Data/Intensities/BaseCalls/")#.replace("Data/Intensities/BaseCalls", "")
+            else:
+                print(f"WARN: Base calls for {fpath} cannot be found.")
         return fpath
 
     @staticmethod
@@ -127,7 +139,8 @@ class Missing(object):
             if sample["id"] not in analysis_dir_fnames:
                 if sample_run != sample["run"]: #if sample run changes based on 
                     ss_dict = {}
-                    sample_sheets = Missing.find_files(".csv", sample["run"])
+                    sample_run_dir = Missing.check_format(sample["run"])
+                    sample_sheets = Missing.find_files(".csv", sample_run_dir)
                     if sample_sheets:
                         for sample_sheet in sample_sheets:
                             ss_dict |= Missing.parse_sample_sheet(sample_sheet, restore_dir)
@@ -135,7 +148,7 @@ class Missing(object):
                             print(f"sample sheets yieded nothing from {sample['run']}")
                         csv_dict |= ss_dict
                     else:
-                        print(f"Note: No sample sheets exist in the following path path {sample['run']}!")
+                        print(f"WARN: No sample sheets exist in the following path path {sample['run']}!")
                     sample_run = sample["run"]
 
                 missing_samples.append(sample["id"])
