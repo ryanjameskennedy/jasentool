@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import pandas as pd
 
@@ -23,15 +24,32 @@ class Missing(object):
             print(f"WARN: {parent_dir} does not exist! Trying to fix.")
         finally:
             search_files = os.listdir(parent_dir)
-            found_files = sorted([os.path.join(parent_dir, search_file) for search_file in search_files if search_term in search_file and not search_file.endswith("~")])
+            found_files = sorted([os.path.join(parent_dir, search_file) for search_file in search_files if re.search(search_term, search_file) and not search_file.endswith("~")])
             return found_files
 
     @staticmethod
     def edit_read_paths(reads, restore_dir):
+        restore_dirs = set([restore_dir.rstrip("/"), "/fs2/seqdata/restored"])
         filename = os.path.join(restore_dir, reads.split("BaseCalls/")[1])
-        read1 = filename.rstrip(".spring") + "_R1_001.fastq.gz"
-        read2 = filename.rstrip(".spring") + "_R2_001.fastq.gz"
+        read1, read2 = [filename.rstrip(".spring") + f"_R{i}_001.fastq.gz" for i in [1, 2]]
         return os.path.join(restore_dir, reads.split("BaseCalls/")[1]), [read1, read2]
+    
+    @staticmethod
+    def check_file_cp(reads, restore_dir):
+        checked_reads = []
+        restore_dirs = set([restore_dir.rstrip("/"), "/fs2/seqdata/restored"])
+        for filepath in reads:
+            filename = os.path.basename(filepath)
+            if filepath.startswith("/fs") and os.path.exists(filepath):
+                checked_reads.append(filepath)
+            else:
+                for dir in restore_dirs:
+                    read_fpath = os.path.join(dir, filename)
+                    if os.path.exists(read_fpath) and not os.path.isdir(read_fpath) and len(checked_reads) != 2:
+                        checked_reads.append(read_fpath)
+        if len(checked_reads) == 0:
+            checked_reads = [os.path.join(restore_dir, os.path.basename(read_filepath)) for read_filepath in reads]
+        return checked_reads
 
     @staticmethod
     def parse_sample_sheet(sample_sheet, restore_dir):
@@ -55,9 +73,9 @@ class Missing(object):
                     else:
                         parent_dir = os.path.join(os.path.dirname(sample_sheet), "Data/Intensities/BaseCalls/")
                     try:
-                        paired_reads = Missing.find_files(clarity_id, parent_dir)
+                        paired_reads = Missing.find_files(r'^' + clarity_id, parent_dir)
                         if len(paired_reads) == 2 and paired_reads[0].endswith(".gz"):
-                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads] #fix w edit_read_paths
+                            restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
                         elif len(paired_reads) == 1 and paired_reads[0].endswith(".spring"):
                             spring_fpaths = paired_reads
@@ -66,18 +84,18 @@ class Missing(object):
                         elif len(paired_reads) == 4 and paired_reads[0].endswith(".gz"):
                             paired_reads = Missing.rm_double_dmltplx(paired_reads)
                             if len(paired_reads) == 2:
-                                restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads] #fix w edit_read_paths
+                                restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                                 csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
                             elif len(paired_reads) == 4:
                                 paired_reads_string = '\n-'.join(paired_reads)
                                 print(f"There are 4 sets of reads related to sample {sample_id} from the {parent_dir}: \n-{paired_reads_string}\n")
                         elif len(paired_reads) == 3:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
-                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
+                            restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
                         elif len(paired_reads) == 6:
                             paired_reads = [paired_read for paired_read in paired_reads if paired_read.endswith(".fastq.gz")]
-                            restored_reads_fpaths = [os.path.join(restore_dir, read_fpath.split ("/")[-1]) for read_fpath in paired_reads]
+                            restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [clarity_group_id, species, restored_reads_fpaths, None, paired_reads]
                         #elif len(paired_reads) == 0:
                             #print(f"The sample {sample_id} doesn't have read/spring files in the {parent_dir} ({paired_reads}).")
@@ -128,6 +146,7 @@ class Missing(object):
                 not_found.append(missing_sample)
                 #print(f"{missing_sample} could not be found")
         print(f"{len(not_found)} samples could not be found")
+        print(f"{len(filtered_csv_dict.keys())} samples remain after filtering")
         return filtered_csv_dict, not_found
     
     @staticmethod
@@ -135,12 +154,14 @@ class Missing(object):
         sample_run = ""
         missing_samples = []
         csv_dict = {}
+        #print(f"{len(list(meta_dict))} samples found in the meta dictionary")
         for sample in meta_dict:
             if sample["id"] not in analysis_dir_fnames:
+                missing_samples.append(sample["id"])
                 if sample_run != sample["run"]: #if sample run changes based on 
                     ss_dict = {}
                     sample_run_dir = Missing.check_format(sample["run"])
-                    sample_sheets = Missing.find_files(".csv", sample_run_dir)
+                    sample_sheets = Missing.find_files(r'.csv$', sample_run_dir)
                     if sample_sheets:
                         for sample_sheet in sample_sheets:
                             ss_dict |= Missing.parse_sample_sheet(sample_sheet, restore_dir)
@@ -151,9 +172,9 @@ class Missing(object):
                         print(f"WARN: No sample sheets exist in the following path path {sample['run']}!")
                     sample_run = sample["run"]
 
-                missing_samples.append(sample["id"])
         print(f"{len(csv_dict.keys())} samples found")
         print(f"{len(missing_samples)} samples missing")
+        print(f"{len(missing_samples)-len(set(missing_samples))} duplicate sample ids")
         filtered_csv_dict, not_found = Missing.filter_csv_dict(csv_dict, missing_samples)
         return filtered_csv_dict, "\n".join(not_found)
 
@@ -192,6 +213,8 @@ class Missing(object):
                     empty_files_dict[sample] = csv_dict[sample]
             except FileNotFoundError:
                 print(f"WARN: {sample} read files ({csv_dict[sample][2][0]} and/or {csv_dict[sample][2][1]}) could not be found!")
+            except IndexError:
+                print(csv_dict[sample])
         for empty_file in list(empty_files_dict.keys()):
             csv_dict.pop(empty_file, None)
         return empty_files_dict, csv_dict
