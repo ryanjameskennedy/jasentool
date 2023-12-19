@@ -85,7 +85,7 @@ class WHO(object):
         # Load the reference GFF file
         gff = pd.read_csv(gff_filepath, names=['seqid', 'source', 'type', 'start', 'end', 'score', 'strand', 'phase', 'attributes'], sep='\t', header=None)
         # Load the WHO catalogue
-        catalogue = pd.read_excel(xlsx_filepath, sheet_name='Mutation_catalogue', header=[0,1]).set_index([('variant (common_name)', 'Unnamed: 2_level_1')])
+        catalogue = pd.read_excel(xlsx_filepath, sheet_name='Catalogue_master_file', header=2)
         # Load the reference genome to impute missing data from deletions
         h37rv = ''
         with open(h37rv_filepath, 'r') as fin:
@@ -279,17 +279,20 @@ class WHO(object):
 
     def _parse(self, fasta_filepath, gff_filepath, download_dir):
         utils = Utils()
-        who_url = "https://apps.who.int/iris/bitstream/handle/10665/341906/WHO-UCN-GTB-PCI-2021.7-eng.xlsx"
+        #who_url = "https://apps.who.int/iris/bitstream/handle/10665/341906/WHO-UCN-GTB-PCI-2021.7-eng.xlsx"
+        who_url = "https://raw.githubusercontent.com/GTB-tbsequencing/mutation-catalogue-2023/main/Final%20Result%20Files/WHO-UCN-TB-2023.5-eng.xlsx"
         who_filepath = os.path.join(download_dir, "who.xlsx")
-        #utils.download_and_save_file(who_url, who_filepath)
+        utils.download_and_save_file(who_url, who_filepath)
         gff, catalogue, h37rv = self.read_files(gff_filepath, who_filepath, fasta_filepath)
         gff_dict = self.get_gene_info(gff)
-        classified = self.prep_catalogue(catalogue)
-        classified = self.var2hgvs(classified, gff_dict)
-        classified = self.impute_del(classified, gff_dict, h37rv)
-        classified = self.imp2hgvs(classified, gff_dict)
-        classified.rename(columns={'hgvs': 'Mutation', 'gene': 'Gene'}, inplace=True)
-        classified = classified.drop(columns=['variant', 'type', 'fail', 'fail_reason', 'complete_variant', 'complete_variant_fail', 'complete_variant_fail_reason'])
+        catalogue.columns = catalogue.columns.str.title()
+        catalogue.rename(columns={'Final Confidence Grading': 'WHO Confidence'}, inplace=True)
+        catalogue['Confers'] = 'resistance'
+        catalogue['Interaction'] = ''
+        catalogue['Literature'] = 'https://www.who.int/publications/i/item/9789240082410'
+        catalogue['WHO Confidence'] = catalogue['WHO Confidence'].apply(lambda x: ' '.join(x.split(' ')[1:]))
+        catalogue['Drug'] = catalogue['Drug'].apply(lambda x: x.lower())
+        catalogue = catalogue.loc[:, ["Drug","Confers","Interaction","Literature","WHO Confidence","Gene","Mutation"]]
         csv_outpath = os.path.join(download_dir, "who.csv")
-        self.write_out_csv(classified, csv_outpath)
-        return classified
+        self.write_out_csv(catalogue, csv_outpath)
+        return catalogue
