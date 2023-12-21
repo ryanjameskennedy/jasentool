@@ -190,9 +190,8 @@ class Missing(object):
             try:
                 spring_fpaths, restored_fpaths = csv_dict[sample][3][0], csv_dict[sample][4]
                 read1, read2 = csv_dict[sample][2]
-                if not os.path.exists(restored_fpaths):
+                if not os.path.exists(restored_fpaths) and not os.path.exists(read1):
                     jcp_command = f'/fs2/sw/bnf-scripts/jcp {spring_fpaths} {restore_dir}/ && '
-                if not os.path.exists(read1):
                     unspring_command = f'/fs2/sw/bnf-scripts/unspring_file.pl {restored_fpaths} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
                 spring_command = spring_command + jcp_command + unspring_command
             except TypeError:
