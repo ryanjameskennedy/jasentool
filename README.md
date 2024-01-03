@@ -1,4 +1,4 @@
-# Jasentool v0.0.1: A mongodb validation tool for comparing pipeline outputs
+# Jasentool: A mongodb validation tool for comparing pipeline outputs
 ## Dependencies (latest)
 * python=3.11
 * pymongo
