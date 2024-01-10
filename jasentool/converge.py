@@ -52,7 +52,7 @@ class Converge(object):
         #h37rv_gb_filepath = mycobacterium_genome.download_genbank()
         who_df = who._parse(fasta_filepath, gff_filepath, self.download_dir)
         tbdb_df = tbprofiler._parse(fasta_filepath, gff_filepath, self.download_dir)
-        tbdb_df, who_df = pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/tbdb.csv"), pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/who.csv")
+        #tbdb_df, who_df = pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/tbdb.csv"), pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/who.csv")
         intersection_df, unique_tbdb_df, unique_who_df = self.compare_columns(tbdb_df, who_df, ['Drug', 'Gene', 'Mutation'])
         intersection_df.to_csv(self.intersection_outfpath, index=False)
         unique_tbdb_df.to_csv(self.unique_tbdb_outfpath, index=False)
