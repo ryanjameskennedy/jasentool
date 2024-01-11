@@ -11,6 +11,7 @@ class Converge(object):
         self.intersection_outfpath = os.path.join(download_dir, "intersection.csv")
         self.unique_tbdb_outfpath = os.path.join(download_dir, "unique_tbdb.csv")
         self.unique_who_outfpath = os.path.join(download_dir, "unique_who.csv")
+        self.convereged_outfpath = os.path.join(download_dir, "convereged_who_tbdb.csv")
 
     def merge_dfs(self, df1, df2):
         pd.merge(df1,df2, on='name', how='inner')
@@ -58,3 +59,4 @@ class Converge(object):
         unique_tbdb_df.to_csv(self.unique_tbdb_outfpath, index=False)
         unique_who_df.to_csv(self.unique_who_outfpath, index=False)
         converged_df = pd.concat([intersection_df, unique_tbdb_df, unique_who_df])
+        converged_df.to_csv(self.convereged_outfpath, index=False)
