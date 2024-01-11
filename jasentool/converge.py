@@ -57,3 +57,4 @@ class Converge(object):
         intersection_df.to_csv(self.intersection_outfpath, index=False)
         unique_tbdb_df.to_csv(self.unique_tbdb_outfpath, index=False)
         unique_who_df.to_csv(self.unique_who_outfpath, index=False)
+        converged_df = pd.concat([intersection_df, unique_tbdb_df, unique_who_df])
