@@ -1,2 +1,4 @@
+jasentool/data/dbs/*
+!jasentool/data/dbs/fohm.csv
 build/
 *.egg-info/
