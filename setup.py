@@ -34,4 +34,5 @@ setup(
     install_requires=["pymongo", "openpyxl", "biopython"],
     entry_points={"console_scripts": ["jasentool=jasentool.__main__:main"]},
     packages=find_packages(exclude=("tests")),
+    package_data={"jasentool": ["data/dbs/*"]},
 )
