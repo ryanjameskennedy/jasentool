@@ -36,7 +36,7 @@ jasentool convert [-i INPUT_FILE [INPUT_FILE ...]] -o OUTPUT_FILE [-f OUT_FORMAT
 
 ### Converge tuberculosis mutation catlogues
 ```
-jasentool converge --input_dir INPUT_DIR --output_dir OUTPUT_DIR [-h]
+jasentool converge --output_dir OUTPUT_DIR
 ```
 
 ### Extract QC values after alignment
