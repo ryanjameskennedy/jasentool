@@ -3,18 +3,19 @@ import pandas as pd
 from jasentool.who import WHO
 from jasentool.genome import Genome
 from jasentool.tbprofiler import Tbprofiler
+from jasentool.utils import Utils
 
 class Converge(object):
-    def __init__(self, tbdb_dir, download_dir):
-        self.tbdb_dir = tbdb_dir
+    def __init__(self, download_dir):
         self.download_dir = download_dir
+        self.fohm_fpath = os.path.join(os.path.dirname(__file__), "data/dbs/fohm.csv")
         self.intersection_outfpath = os.path.join(download_dir, "intersection.csv")
         self.unique_tbdb_outfpath = os.path.join(download_dir, "unique_tbdb.csv")
         self.unique_who_outfpath = os.path.join(download_dir, "unique_who.csv")
-        self.convereged_outfpath = os.path.join(download_dir, "convereged_who_tbdb.csv")
-
-    def merge_dfs(self, df1, df2):
-        pd.merge(df1,df2, on='name', how='inner')
+        self.fohm_tbdb_outfpath = os.path.join(download_dir, "fohm_tbdb.csv")
+        self.convereged_outfpath = os.path.join(download_dir, "converged_who_fohm_tbdb.csv")
+        self.tbdb_filepath = os.path.join(download_dir, "tbdb.csv")
+        self.tbdb_url = "https://raw.githubusercontent.com/jodyphelan/tbdb/master/tbdb.csv"
 
     def compare_columns(self, tbdb_df, who_df, column_names):
         """Return a list of all of the unique and common variants in each dataframe"""
@@ -44,19 +45,24 @@ class Converge(object):
         return intersection_df, unique_tbdb_df, unique_who_df
 
     def run(self):
+        utils = Utils()
         # Download the genome
         mycobacterium_genome = Genome("NC_000962.3", "AL123456.3", self.download_dir, "h37rv")
         fasta_filepath = mycobacterium_genome.download_fasta()
         gff_filepath = mycobacterium_genome.download_gff()
+        utils.download_and_save_file(self.tbdb_url, self.tbdb_filepath)
         who = WHO()
-        tbprofiler = Tbprofiler(self.tbdb_dir)
+        tbprofiler = Tbprofiler(self.tbdb_filepath)
         #h37rv_gb_filepath = mycobacterium_genome.download_genbank()
         who_df = who._parse(fasta_filepath, gff_filepath, self.download_dir)
         tbdb_df = tbprofiler._parse(fasta_filepath, gff_filepath, self.download_dir)
         #tbdb_df, who_df = pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/tbdb.csv"), pd.read_csv("/data/bnf/dev/ryan/pipelines/jasen/converge/who.csv")
+        fohm_df = pd.read_csv(self.fohm_fpath)
         intersection_df, unique_tbdb_df, unique_who_df = self.compare_columns(tbdb_df, who_df, ['Drug', 'Gene', 'Mutation'])
+        fohm_tbdb_df = pd.concat([intersection_df, unique_tbdb_df, fohm_df], ignore_index=True).drop_duplicates()
         intersection_df.to_csv(self.intersection_outfpath, index=False)
         unique_tbdb_df.to_csv(self.unique_tbdb_outfpath, index=False)
         unique_who_df.to_csv(self.unique_who_outfpath, index=False)
-        converged_df = pd.concat([intersection_df, unique_tbdb_df, unique_who_df])
+        fohm_tbdb_df.to_csv(self.fohm_tbdb_outfpath, index=False)
+        converged_df = pd.concat([intersection_df, unique_tbdb_df, unique_who_df, fohm_df], ignore_index=True).drop_duplicates()
         converged_df.to_csv(self.convereged_outfpath, index=False)
