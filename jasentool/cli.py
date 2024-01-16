@@ -1,3 +1,4 @@
+import os
 import argparse
 from contextlib import contextmanager
 
@@ -192,10 +193,8 @@ def get_main_parser():
             __help(group)
 
     with subparser(sub_parsers, 'converge', 'Converge TB mutation catalogues') as parser:
-        with arg_group(parser, 'required named arguments') as group:
-            __input_dir(group, required=True, help='path to tbdb directory')
-            __output_dir(group, required=True)
         with arg_group(parser, 'optional arguments') as group:
+            __output_dir(group, required=False)
             __help(group)
 
     with subparser(sub_parsers, 'qc', 'Run qc on bwa alignment') as parser:

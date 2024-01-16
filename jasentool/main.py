@@ -118,7 +118,7 @@ class OptionsParser(object):
                 utils.start_remote_pipelines(batch_files, options.remote_dir)
 
     def converge(self, options):
-        converge = Converge(options.input_dir, options.output_dir)
+        converge = Converge(options.output_dir)
         converge.run()
 
     def qc(self, options):
