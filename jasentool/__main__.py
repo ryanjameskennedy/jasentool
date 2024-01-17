@@ -1,15 +1,17 @@
+"""__main__ file that handles help and cli execution"""
+
 import sys
-import os
 
 from jasentool import __author__, __copyright__, __version__
 from jasentool.cli import get_main_parser
 from jasentool.main import OptionsParser
 
 def print_help():
-    print('''
+    """Print help string for jasentool software"""
+    print(f'''
 
-                    ...::: Jasentool v%s :::...
-Author(s): %s
+                    ...::: Jasentool v{__version__} :::...
+Author(s): {__author__}
 
 Description:
     This software is a mongodb tool that fetches, inserts and 
@@ -32,9 +34,10 @@ Methods:
     fix                 Fix output files from bjorn.
     converge            Converge tuberculosis mutation catlogues.
     qc                  Extract QC values after alignment.
-''' % (__version__, __author__))
+''')
 
 def main():
+    """Main function that handles cli"""
     args = None
     if len(sys.argv) == 1:
         print_help()
@@ -57,11 +60,11 @@ def main():
     except KeyboardInterrupt:
         print('Controlled exit resulting from interrupt signal.')
         sys.exit(1)
-    except Exception as e:
+    except Exception as error_code:
         error_message = 'Uncontrolled exit resulting from an unexpected error.\n\n'
         error_message += '-' * 80 + '\n'
-        error_message += 'EXCEPTION: {}\n'.format(type(e).__name__)
-        error_message += 'MESSAGE: {}\n'.format(e)
+        error_message += f'EXCEPTION: {type(error_code).__name__}\n'
+        error_message += f'MESSAGE: {error_code}\n'
         error_message += '-' * 80 + '\n\n'
         print(error_message)
         sys.exit(1)
