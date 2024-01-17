@@ -1,3 +1,5 @@
+"""Module for executing each module/class"""
+
 import os
 import sys
 import json
@@ -12,8 +14,10 @@ from jasentool.fix import Fix
 from jasentool.converge import Converge
 from jasentool.qc import QC
 
-class OptionsParser(object):
+class OptionsParser:
+    """Class that parses through cli arguments and executes respective modules"""
     def __init__(self, version):
+        """Initiate OptionsParser class"""
         self.version = version
         self._check_python()
 
@@ -36,7 +40,7 @@ class OptionsParser(object):
         output_fpaths = []
         if output_dir:
             output_dir = os.path.expanduser(output_dir)
-            if combined_output: 
+            if combined_output:
                 output_fpaths = [os.path.join(output_dir, prefix + "combined_outputs")]
             else:
                 output_fpaths = [os.path.join(output_dir, prefix + os.path.basename(os.path.splitext(input_fpath)[0])) for input_fpath in input_files]
@@ -48,33 +52,41 @@ class OptionsParser(object):
         return output_fpaths
 
     def find(self, options):
+        """Find entry in mongodb"""
         Database.initialize(options.db_name)
-        output_fpaths = self._get_output_fpaths(options.query, options.output_dir, options.output_file, options.prefix, options.combined_output)
+        output_fpaths = self._get_output_fpaths(options.query, options.output_dir,
+                                                options.output_file, options.prefix,
+                                                options.combined_output)
         for query_idx, query in enumerate(options.query):
             find = list(Database.find(options.db_collection, {"id": query}, {}))
             if not find:
                 find = list(Database.find(options.db_collection, {"sample_id": query}, {}))
-            pp = pprint.PrettyPrinter(indent=4)
-            pp.pprint(find)
-            #with open(output_fpaths[query_idx], 'w+') as fout:
-                #json.dump(find, fout)
+            sample_pp = pprint.PrettyPrinter(indent=4)
+            sample_pp.pprint(find)
+            with open(output_fpaths[query_idx], 'w+', encoding="utf-8") as fout:
+                json.dump(find, fout)
 
     def insert(self, options):
+        """Insert entry in mongodb"""
         Database.initialize(options.db_name)
         input_files = self._input_to_process(options.input_file, options.input_dir)
         for input_file in input_files:
-            with open(input_file, 'r') as fin:
+            with open(input_file, 'r', encoding="utf-8") as fin:
                 input_sample = json.load(fin)
                 Database.insert(options.db_collection, input_sample)
 
     def validate(self, options):
+        """Execute validation of old vs new pipeline results"""
         Database.initialize(options.db_name)
         input_files = self._input_to_process(options.input_file, options.input_dir)
-        output_fpaths = self._get_output_fpaths(input_files, options.output_dir, options.output_file, options.prefix, options.combined_output)
+        output_fpaths = self._get_output_fpaths(input_files, options.output_dir,
+                                                options.output_file, options.prefix,
+                                                options.combined_output)
         validate = Validate()
         validate.run(input_files, output_fpaths, options.db_collection, options.combined_output)
 
     def missing(self, options):
+        """Execute search for missing samples from new pipeline results"""
         utils = Utils()
         missing = Missing()
         db = Database()
@@ -98,6 +110,7 @@ class OptionsParser(object):
             utils.write_out_txt(bash_script, bash_fpath)
 
     def convert(self, options):
+        """Execute conversion of file formats"""
         utils = Utils()
         convert = Convert()
         input_file = options.input_file[0]
@@ -108,6 +121,7 @@ class OptionsParser(object):
             utils.write_out_txt(output_txt, output_fpath)
 
     def fix(self, options):
+        """Execute fixing of file to desired format(s)"""
         utils = Utils()
         fix = Fix()
         csv_files, assays = fix.fix_csv(options.csv_file, options.output_file)
@@ -118,15 +132,18 @@ class OptionsParser(object):
                 utils.start_remote_pipelines(batch_files, options.remote_dir)
 
     def converge(self, options):
+        """Execute convergence of mutation catalogues"""
         converge = Converge(options.output_dir)
         converge.run()
 
     def qc(self, options):
+        """Execute retrieval of qc results"""
         qc = QC(options)
         json_result = qc.run()
         qc.write_json_result(json_result, options.output_file)
 
     def parse_options(self, options):
+        """Options parser"""
         if options.subparser_name == 'find':
             self.find(options)
 
@@ -147,6 +164,6 @@ class OptionsParser(object):
 
         elif options.subparser_name == 'converge':
             self.converge(options)
-        
+
         elif options.subparser_name == 'qc':
             self.qc(options)
