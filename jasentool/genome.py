@@ -1,8 +1,11 @@
+"""Module for genomes and files related to the genomes"""
+
 import os
 from Bio import Entrez, SeqIO
 from jasentool.utils import Utils
 
 class Genome:
+    """Class for handling genome download in multiple formats (fasta, genbank, gff) from NCBI"""
     def __init__(self, refseq_accn, genbank_accn, download_dir, prefix, email="rjkennedyy@gmail.com"):
         Entrez.email = email
         self.refseq_accn = refseq_accn
@@ -14,9 +17,11 @@ class Genome:
         self.gff_filepath = os.path.join(download_dir, f"{prefix}.gff")
 
     def download_fasta(self):
+        """Download genome in fasta format"""
         try:
             # Fetch the fasta record from NCBI
-            fasta_handle = Entrez.efetch(db="nucleotide", id=self.refseq_accn, rettype="fasta", retmode="text")
+            fasta_handle = Entrez.efetch(db="nucleotide", id=self.refseq_accn,
+                                         rettype="fasta", retmode="text")
             fasta_record = SeqIO.read(fasta_handle, "fasta")
             fasta_handle.close()
 
@@ -25,14 +30,16 @@ class Genome:
 
             print(f"Fasta downloaded and saved to {self.fasta_filepath}")
 
-        except Exception as e:
-            print(f"Error downloading the genome: {e}")
+        except Exception as error_code:
+            print(f"Error downloading the genome: {error_code}")
         return self.fasta_filepath
 
     def download_genbank(self):
+        """Download genome in fasta format"""
         try:
             # Fetch the GenBank record from NCBI
-            genbank_handle = Entrez.efetch(db="nucleotide", id=self.genbank_accn, rettype="gb", retmode="text")
+            genbank_handle = Entrez.efetch(db="nucleotide", id=self.genbank_accn,
+                                           rettype="gb", retmode="text")
             genbank_record = SeqIO.read(genbank_handle, "genbank")
             genbank_handle.close()
 
@@ -41,11 +48,12 @@ class Genome:
 
             print(f"Genbank file downloaded and saved to {self.genbank_filepath}")
 
-        except Exception as e:
-            print(f"Error downloading the genbank file: {e}")
+        except Exception as error_code:
+            print(f"Error downloading the genbank file: {error_code}")
         return self.genbank_filepath
-    
+
     def download_gff(self):
+        """Download gff of genome genes"""
         utils = Utils()
         h37rv_url = "https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/GCF_000195955.2/download?include_annotation_type=GENOME_GFF&filename=GCF_000195955.2.zip"
         try:
@@ -54,6 +62,6 @@ class Genome:
             source = os.path.join(self.download_dir, "ncbi_dataset/data/GCF_000195955.2/genomic.gff")
             destination = os.path.join(self.download_dir, "h37rv.gff")
             utils.copy_file(source, destination)
-        except Exception as e:
-            print(f"Error downloading the gff file: {e}")
+        except Exception as error_code:
+            print(f"Error downloading the gff file: {error_code}")
         return self.gff_filepath
