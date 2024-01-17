@@ -1,8 +1,11 @@
+"""Module for retrieving qc results"""
+
 import os
 import json
 import subprocess
 
 class QC:
+    """Class for retrieving qc results"""
     def __init__(self, args):
         self.results = {}
         self.bam = args.bam
@@ -14,11 +17,13 @@ class QC:
         self.paired = self.is_paired()
 
     def write_json_result(self, json_result, output_filepath):
-        with open(output_filepath, 'w') as json_file:
+        """Write out json file"""
+        with open(output_filepath, 'w', encoding="utf-8") as json_file:
             json_file.write(json_result)
 
-    def parse_basecov_bed(self, fn, thresholds):
-        with open(fn) as cov_fh:
+    def parse_basecov_bed(self, basecov_fpath, thresholds):
+        """Parse base coverage bed file"""
+        with open(basecov_fpath, "r", encoding="utf-8") as cov_fh:
             head_str = cov_fh.readline().strip().lstrip("#")
             head = head_str.split("\t")
             cov_field = head.index("COV")
@@ -29,12 +34,12 @@ class QC:
             tot, cnt = 0, 0
             levels = {}
             for line in cov_fh:
-                a = line.strip().split("\t")
-                tot += int(a[2])
+                line = line.strip().split("\t")
+                tot += int(line[2])
                 cnt += 1
                 tot_bases += 1
                 for min_val in thresholds:
-                    if int(a[cov_field]) >= min_val:
+                    if int(line[cov_field]) >= min_val:
                         above_cnt[min_val] += 1
 
             above_pct = {min_val: 100 * (above_cnt[min_val] / tot_bases) for min_val in thresholds}
@@ -46,34 +51,37 @@ class QC:
             q3_num = 3 * cnt / 4
             median_num = cnt / 2
             sum_val = 0
-            q1, q3, median = None, None, None
+            quartile1, quartile3, median = None, None, None
             iqr_median = "9999"
-            for l in sorted(levels):
-                sum_val += levels[l]
-                if sum_val >= q1_num and not q1:
-                    q1 = l
+            for level in sorted(levels):
+                sum_val += levels[level]
+                if sum_val >= q1_num and not quartile1:
+                    quartile1 = level
                 if sum_val >= median_num and not median:
-                    median = l
-                if sum_val >= q3_num and not q3:
-                    q3 = l
+                    median = level
+                if sum_val >= q3_num and not quartile3:
+                    quartile3 = level
 
-            if q1 and q3 and median:
-                iqr_median = (q3 - q1) / median
+            if quartile1 and quartile3 and median:
+                iqr_median = (quartile3 - quartile1) / median
 
             return above_pct, mean_cov, iqr_median
 
     def is_paired(self):
+        """Check if reads are paired"""
         line = subprocess.check_output(f"samtools view {self.bam} | head -n 1| awk '{{print $2}}'", shell=True, text=True)
         remainder = int(line) % 2
         is_paired = 1 if remainder else 0
         return is_paired
 
     def system_p(self, *cmd):
+        """Execute subproces"""
         print(f"RUNNING: {' '.join(cmd)}")
         print()
         subprocess.run(cmd, check=True)
 
     def run(self):
+        """Run QC info extraction"""
         if self.baits and self.reference:
             print("Calculating HS-metrics...")
             dict_file = self.reference
@@ -85,11 +93,11 @@ class QC:
                 self.system_p(f"picard BedToIntervalList -I {self.baits} -O {self.baits}.interval_list -SD {dict_file}")
             self.system_p(f"picard CollectHsMetrics -I {self.bam} -O {self.bam}.hsmetrics -R {self.reference} -BAIT_INTERVALS {self.baits}.interval_list -TARGET_INTERVALS {self.bed}.interval_list")
 
-            with open(f"{self.bam}.hsmetrics") as hs:
-                for line in hs:
+            with open(f"{self.bam}.hsmetrics", "r", encoding="utf-8") as fin:
+                for line in fin:
                     if line.startswith("## METRICS CLASS"):
-                        next(hs)
-                        vals = next(hs).split("\t")
+                        next(fin)
+                        vals = next(fin).split("\t")
                         self.results['pct_on_target'] = vals[18]
                         self.results['fold_enrichment'] = vals[26]
                         self.results['median_coverage'] = vals[23]
@@ -104,7 +112,7 @@ class QC:
         if self.paired:
             print("Collect insert sizes...")
             self.system_p(f"picard CollectInsertSizeMetrics -I {self.bam} -O {self.bam}.inssize -H {self.bam}.ins.pdf -STOP_AFTER 1000000")
-            with open(f"{self.bam}.inssize") as ins:
+            with open(f"{self.bam}.inssize", "r", encoding="utf-8") as ins:
                 for line in ins:
                     if line.startswith("## METRICS CLASS"):
                         next(ins)
