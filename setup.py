@@ -1,3 +1,5 @@
+"""setup.py for pip installation of jasentool"""
+
 import re
 import sys
 
@@ -9,10 +11,10 @@ except ImportError:
         'Try runnning: python -m ensurepip'
     )
 
-with open("README.md", 'r') as fin:
+with open("README.md", 'r', encoding="utf-8") as fin:
     long_description = fin.read()
 
-with open("jasentool/__init__.py", 'r') as fin:
+with open("jasentool/__init__.py", 'r', encoding="utf-8") as fin:
     version_line_regex = re.compile(r'^\s*__version__\s*=\s*[\'"]([^\'"]+)[\'"]')
     for line in fin:
         match = version_line_regex.match(line)
@@ -33,6 +35,6 @@ setup(
     ],
     install_requires=["pymongo", "openpyxl", "biopython"],
     entry_points={"console_scripts": ["jasentool=jasentool.__main__:main"]},
-    packages=find_packages(exclude=("tests")),
+    packages=find_packages(exclude="tests"),
     package_data={"jasentool": ["data/dbs/*"]},
 )
