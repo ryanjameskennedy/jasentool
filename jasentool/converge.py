@@ -1,6 +1,7 @@
 """Module to converge mutation catalogues"""
 
 import os
+import shutil
 import pandas as pd
 from jasentool.who import WHO
 from jasentool.genome import Genome
@@ -47,6 +48,17 @@ class Converge:
         intersection_df = intersecting_rows.drop(columns=drop_columns).rename(columns=column_mapping)
         return intersection_df, unique_tbdb_df, unique_who_df
 
+    def rm_intermediary_files(self):
+        files = os.listdir(self.download_dir)
+        for filename in ['converged_who_fohm_tbdb.csv', 'unique_tbdb.csv', 'unique_who.csv', 'fohm.csv']:
+            files.remove(filename)
+        for filename in files:
+            filepath = os.path.join(self.download_dir, filename)
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+            elif os.path.isdir(filepath):
+                shutil.rmtree(filepath)
+
     def run(self):
         """Run the retrieval and convergance of mutation catalogues"""
         utils = Utils()
@@ -74,3 +86,4 @@ class Converge:
         dfs_to_converge = [intersection_df, unique_tbdb_df, unique_who_df, fohm_df]
         converged_df = pd.concat(dfs_to_converge, ignore_index=True).drop_duplicates()
         converged_df.to_csv(self.convereged_outfpath, index=False)
+        self.rm_intermediary_files()
