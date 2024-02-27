@@ -1,0 +1,49 @@
+[project]
+name = "jasentool"
+dynamic = ["version"]
+authors = [
+  {name = "Ryan Kennedy", email = "Ryan.Kennedy@skane.se"},
+]
+description = "Multipurpose tool for jobs related to the jasen pipeline and Bonsai tool."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "setuptools",
+    "wheel",
+    "requests",
+    "tqdm",
+    "pandas",
+    "pymongo",
+    "openpyxl",
+    "biopython"
+]
+
+[project.urls]
+Repository = "https://github.com/ryanjameskennedy/jasentool"
+Issues = "https://github.com/ryanjameskennedy/jasentool/issues"
+Changelog = "https://github.com/ryanjameskennedy/jasentool/CHANGELOG.md"
+
+[project.scripts]
+jasentool = "jasentool.__main__:main"
+
+[project.optional-dependencies]
+dev = [
+    "pylint ~=3.0.2",
+    "black ~=23.11.0",
+    "isort ~=5.12.0",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "jasentool.__version__"}
+
+[tool.coverage.run]
+source = ["jasentool"]
