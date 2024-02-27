@@ -50,10 +50,8 @@ class Converge:
 
     def rm_intermediary_files(self):
         files = os.listdir(self.download_dir)
-        files.remove('converged_who_fohm_tbdb.csv')
-        files.remove('unique_tbdb.csv')
-        files.remove('unique_who.csv')
-        files.remove('fohm.csv')
+        for filename in ['converged_who_fohm_tbdb.csv', 'unique_tbdb.csv', 'unique_who.csv', 'fohm.csv']:
+            files.remove(filename)
         for filename in files:
             filepath = os.path.join(self.download_dir, filename)
             if os.path.isfile(filepath):
