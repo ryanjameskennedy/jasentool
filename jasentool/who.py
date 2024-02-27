@@ -284,7 +284,7 @@ class WHO:
         """Parse WHO excel file"""
         utils = Utils()
         #who_url = "https://apps.who.int/iris/bitstream/handle/10665/341906/WHO-UCN-GTB-PCI-2021.7-eng.xlsx"
-        who_url = "https://raw.githubusercontent.com/GTB-tbsequencing/mutation-catalogue-2023/main/Final%20Result%20Files/WHO-UCN-TB-2023.5-eng.xlsx"
+        who_url = "https://raw.githubusercontent.com/GTB-tbsequencing/mutation-catalogue-2023/main/Final%20Result%20Files/WHO-UCN-TB-2023.6-eng.xlsx"
         who_filepath = os.path.join(download_dir, "who.xlsx")
         utils.download_and_save_file(who_url, who_filepath)
         _, catalogue, _ = self.read_files(gff_filepath, who_filepath, fasta_filepath)
