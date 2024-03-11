@@ -134,7 +134,7 @@ class OptionsParser:
     def converge(self, options):
         """Execute convergence of mutation catalogues"""
         converge = Converge(options.output_dir)
-        converge.run()
+        converge.run(options.save_dbs)
 
     def qc(self, options):
         """Execute retrieval of qc results"""
