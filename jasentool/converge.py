@@ -59,7 +59,7 @@ class Converge:
             elif os.path.isdir(filepath):
                 shutil.rmtree(filepath)
 
-    def run(self):
+    def run(self, save_all_dbs):
         """Run the retrieval and convergance of mutation catalogues"""
         utils = Utils()
         # Download the genome
@@ -86,4 +86,5 @@ class Converge:
         dfs_to_converge = [intersection_df, unique_tbdb_df, unique_who_df, fohm_df]
         converged_df = pd.concat(dfs_to_converge, ignore_index=True).drop_duplicates()
         converged_df.to_csv(self.convereged_outfpath, index=False)
-        self.rm_intermediary_files()
+        if not save_all_dbs:
+            self.rm_intermediary_files()

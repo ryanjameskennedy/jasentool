@@ -164,6 +164,11 @@ def __combined_output(group):
     group.add_argument('--combined_output', dest='combined_output', action='store_true',
                        help='combine all of the outputs into one output')
 
+def __save_dbs(group):
+    """Save all intermediary dbs created for TBProfiler db convergence"""
+    group.add_argument('--save_dbs', dest='save_dbs', action='store_true',
+                       help='save all intermediary dbs created for TBProfiler db convergence')
+
 def __sample_sheet(group, required):
     """Add sample_sheet argument to group"""
     group.add_argument('--sample_sheet', required=required, dest='sample_sheet',
@@ -262,6 +267,7 @@ def get_main_parser():
     with subparser(sub_parsers, 'converge', 'Converge TB mutation catalogues') as parser:
         with arg_group(parser, 'optional arguments') as group:
             __output_dir(group, required=False)
+            __save_dbs(group)
             __help(group)
 
     with subparser(sub_parsers, 'qc', 'Run qc on bwa alignment') as parser:
