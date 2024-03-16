@@ -42,6 +42,16 @@ class Missing:
         return os.path.join(restore_dir, reads.split("BaseCalls/")[1]), [read1, read2]
 
     @staticmethod
+    def get_seqrun_from_filepath(filepath):
+        dirs = filepath.split("/")
+        pattern = r'^\d{6}'  # Regular expression pattern for YYMMDD format
+        for dir in dirs:
+            match = re.search(pattern, dir)
+            if match:
+                return dir
+        return None
+
+    @staticmethod
     def check_file_cp(reads, restore_dir):
         """Check that file not already coppied to restore directory"""
         checked_reads = []
@@ -70,6 +80,7 @@ class Missing:
     def parse_sample_sheet(sample_sheet, restore_dir):
         """Parse sample sheets for sample meta data"""
         csv_dict = {}
+        seqrun = Missing.get_seqrun_from_filepath(sample_sheet)
         with open(sample_sheet, "r", encoding="utf-8") as fin:
             for line in fin:
                 if line.endswith("saureus\n"):
@@ -77,13 +88,14 @@ class Missing:
                     sample_id = line.split(",")[-1].split("_")[1]
                     species = line.split(",")[-1].split("_")[2]
                     try:
-                        clarity_id = line.split(",")[0].split(":")[1]
+                        clarity_sample_meta = line.split(",")[0].split(":")[1]
                     except IndexError:
-                        clarity_id = line.split(",")[0]
+                        clarity_sample_meta = line.split(",")[0]
                     try:
-                        clarity_group_id = clarity_id.split("_")[1]
+                        clarity_group_id = clarity_sample_meta.split("_")[1]
                     except IndexError:
-                        clarity_group_id = clarity_id
+                        clarity_group_id = clarity_sample_meta
+                    clarity_sample_id = clarity_sample_meta.split("_")[0]
                     if ":" in line:
                         parent_dir = os.path.join(
                             line.split(":")[0].rstrip("SampleSheet.csv"),
@@ -95,12 +107,14 @@ class Missing:
                             "Data/Intensities/BaseCalls/"
                         )
                     try:
-                        paired_reads = Missing.find_files(r'^' + clarity_id, parent_dir)
+                        paired_reads = Missing.find_files(r'^' + clarity_sample_id, parent_dir)
                         if len(paired_reads) == 2 and paired_reads[0].endswith(".gz"):
                             restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [
+                                clarity_sample_id,
                                 clarity_group_id,
                                 species,
+                                seqrun,
                                 restored_reads_fpaths,
                                 None,
                                 paired_reads
@@ -113,8 +127,10 @@ class Missing:
                                 [restore_dir]*len(spring_fpaths)
                             ))[0]
                             csv_dict[sample_id] = [
+                                clarity_sample_id,
                                 clarity_group_id,
                                 species,
+                                seqrun,
                                 paired_reads,
                                 spring_fpaths,
                                 restored_spring_fpaths
@@ -124,8 +140,10 @@ class Missing:
                             if len(paired_reads) == 2:
                                 restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                                 csv_dict[sample_id] = [
+                                    clarity_sample_id,
                                     clarity_group_id,
                                     species,
+                                    seqrun,
                                     restored_reads_fpaths,
                                     None,
                                     paired_reads
@@ -140,8 +158,10 @@ class Missing:
                                             if paired_read.endswith(".fastq.gz")]
                             restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [
+                                clarity_sample_id,
                                 clarity_group_id,
                                 species,
+                                seqrun,
                                 restored_reads_fpaths,
                                 None,
                                 paired_reads
@@ -151,8 +171,10 @@ class Missing:
                                             if paired_read.endswith(".fastq.gz")]
                             restored_reads_fpaths = Missing.check_file_cp(paired_reads, restore_dir)
                             csv_dict[sample_id] = [
+                                clarity_sample_id,
                                 clarity_group_id,
                                 species,
+                                seqrun,
                                 restored_reads_fpaths,
                                 None,
                                 paired_reads
@@ -253,14 +275,14 @@ class Missing:
             jcp_command = ""
             unspring_command = ""
             try:
-                spring_fpaths, restored_fpaths = csv_dict[sample][3][0], csv_dict[sample][4]
-                read1, _ = csv_dict[sample][2]
+                spring_fpaths, restored_fpaths = csv_dict[sample][5][0], csv_dict[sample][6]
+                read1, _ = csv_dict[sample][4]
                 if not os.path.exists(restored_fpaths) and not os.path.exists(read1):
                     jcp_command = f'/fs2/sw/bnf-scripts/jcp {spring_fpaths} {restore_dir}/ && '
                     unspring_command = f'/fs2/sw/bnf-scripts/unspring_file.pl {restored_fpaths} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
                 spring_command = spring_command + jcp_command + unspring_command
             except TypeError:
-                for read_fpath in csv_dict[sample][4]:
+                for read_fpath in csv_dict[sample][6]:
                     jcp_command = f'/fs2/sw/bnf-scripts/jcp {read_fpath} {restore_dir}/ WAIT &\nPIDS="$PIDS $!"\n'
                     spring_command = spring_command + jcp_command
         bash_script = shell_script_path + shell_fail_count + spring_command + shell_for_loop
@@ -272,12 +294,12 @@ class Missing:
         empty_files_dict = {}
         for sample in csv_dict:
             try:
-                file_size_r1 = os.path.getsize(csv_dict[sample][2][0]) / (1024 * 1024)
-                file_size_r2 = os.path.getsize(csv_dict[sample][2][1]) / (1024 * 1024)
+                file_size_r1 = os.path.getsize(csv_dict[sample][4][0]) / (1024 * 1024)
+                file_size_r2 = os.path.getsize(csv_dict[sample][4][1]) / (1024 * 1024)
                 if file_size_r1 < 10 or file_size_r2 < 10:
                     empty_files_dict[sample] = csv_dict[sample]
             except FileNotFoundError:
-                print(f"WARN: {sample} read files ({csv_dict[sample][2][0]} and/or {csv_dict[sample][2][1]}) could not be found!")
+                print(f"WARN: {sample} read files ({csv_dict[sample][4][0]} and/or {csv_dict[sample][4][1]}) could not be found!")
             except IndexError:
                 print(csv_dict[sample])
         for empty_file in list(empty_files_dict.keys()):
