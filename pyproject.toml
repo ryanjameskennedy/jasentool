@@ -22,7 +22,7 @@ dependencies = [
     "requests",
     "tqdm",
     "pandas",
-    "pymongo",
+    "pymongo==3.13",
     "openpyxl",
     "biopython"
 ]
