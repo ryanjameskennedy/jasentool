@@ -15,14 +15,17 @@ class Utils:
     def write_out_csv(csv_dict, assay, platform, out_fpath):
         """Write out file as csv"""
         with open(out_fpath, 'w+', encoding="utf-8") as csvfile:
-            fieldnames = ["id", "group", "species", "assay", "platform", "read1", "read2"] #header
+            fieldnames = ["id", "clarity_sample_id", "group", "species", "assay",
+                          "platform", "sequencing_run", "read1", "read2"] #header
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for sample in csv_dict:
-                row_dict = {"id":sample, "group": csv_dict[sample][0],
-                            "species": csv_dict[sample][1], "assay": assay,
-                            "platform": platform, "read1": csv_dict[sample][2][0],
-                            "read2": csv_dict[sample][2][1]} #write rows to CSV
+                row_dict = {"id": sample, "clarity_sample_id": csv_dict[sample][0],
+                            "group": csv_dict[sample][1], "species": csv_dict[sample][2],
+                            "assay": assay, "platform": platform,
+                            "sequencing_run": csv_dict[sample][3],
+                            "read1": csv_dict[sample][4][0],
+                            "read2": csv_dict[sample][4][1]} #write rows to CSV
                 writer.writerow(row_dict)
 
     @staticmethod
